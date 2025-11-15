@@ -15,17 +15,40 @@ export default function Signup() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simple validation
+
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
-    console.log("Form Data:", formData);
-    alert("Sign up successful!");
-    navigate("/"); // redirect to homepage after signup
+
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.msg || "Signup failed");
+        return;
+      }
+
+      alert("Signup successful!");
+      navigate("/login");
+    } catch (error) {
+      alert("Server error");
+      console.error(error);
+    }
   };
+
 
   return (
     <div className="signup-container">
