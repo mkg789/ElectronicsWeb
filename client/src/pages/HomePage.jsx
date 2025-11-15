@@ -43,7 +43,7 @@ export default function HomePage() {
 
                   <hr />
 
-                  <p className="menu-item">My Orders</p>
+                  <p className="menu-item" onClick={() => navigate("/orders")}>My Orders </p>
                   <p className="menu-item">Wishlist</p>
                   <p className="menu-item">Account Settings</p>
                   <p className="menu-item">Help Center</p>
