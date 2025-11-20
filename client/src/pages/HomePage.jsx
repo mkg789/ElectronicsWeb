@@ -1,27 +1,58 @@
 import "./HomePage.css";
 import { FiSearch } from "react-icons/fi";
 import { CgProfile } from "react-icons/cg";
-import { useNavigate } from "react-router-dom"; // ✅ import useNavigate
-
-const categories = [
-  "Mobiles",
-  "Laptops",
-  "Accessories",
-  "Audio",
-  "Gaming",
-  "Wearables",
-  "Camera",
-];
-
-const products = [
-  { id: 1, name: "iPhone 14 Pro", price: "$999", img: "https://via.placeholder.com/200" },
-  { id: 2, name: "Samsung S23", price: "$799", img: "https://via.placeholder.com/200" },
-  { id: 3, name: "Sony Headphones", price: "$199", img: "https://via.placeholder.com/200" },
-  { id: 4, name: "Asus Gaming Laptop", price: "$1299", img: "https://via.placeholder.com/200" },
-];
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import API from "../api"; // Axios instance
 
 export default function HomePage() {
-  const navigate = useNavigate(); // ✅ initialize navigate
+  const navigate = useNavigate();
+
+  // State hooks
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch all products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await API.get("/products");
+        setProducts(res.data);
+      } catch (err) {
+        console.error("Failed to fetch products:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  // Fetch all categories
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await API.get("/products/categories/all");
+        setCategories(res.data);
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // Search handler
+  const handleSearch = () => {
+    if (searchQuery.trim() !== "") {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") handleSearch();
+  };
 
   return (
     <div className="home-container">
@@ -31,44 +62,52 @@ export default function HomePage() {
         <h2 className="logo">Zyntrica</h2>
 
         <div className="nav-icons">
-            <FiSearch className="icon" />
+          <FiSearch className="icon" />
 
-            {/* NEW PROFILE DROPDOWN */}
-            <div className="profile-wrapper">
-                <CgProfile className="icon profile-icon" />
-
-                <div className="profile-menu">
-                  <p className="menu-title">Welcome</p>
-                  <button className="login-btn" onClick={() => navigate("/login")}>Login</button>
-
-                  <hr />
-
-                  <p className="menu-item" onClick={() => navigate("/orders")}>My Orders </p>
-                  <p className="menu-item">Wishlist</p>
-                  <p className="menu-item">Account Settings</p>
-                  <p className="menu-item">Help Center</p>
-                  <p className="menu-item">Logout</p>
-                </div>
-            </div>
+          <div className="profile-wrapper" onClick={() => setMenuOpen(!menuOpen)}>
+            <CgProfile className="icon profile-icon" />
+            {menuOpen && (
+              <div className="profile-menu">
+                <p className="menu-title">Welcome</p>
+                <button className="login-btn" onClick={() => navigate("/login")}>
+                  Login
+                </button>
+                <hr />
+                <p className="menu-item" onClick={() => navigate("/orders")}>My Orders</p>
+                <p className="menu-item">Wishlist</p>
+                <p className="menu-item">Account Settings</p>
+                <p className="menu-item">Help Center</p>
+                <p className="menu-item" onClick={() => alert("Logged out!")}>Logout</p>
+              </div>
+            )}
+          </div>
         </div>
-
       </nav>
 
       {/* ---------------- SEARCH BAR ---------------- */}
       <div className="search-wrapper">
         <FiSearch className="search-icon-left" />
         <input
-            type="text"
-            className="search-input"
-            placeholder="Search for products, brands and more..."
+          type="text"
+          className="search-input"
+          placeholder="Search for products..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={handleKeyPress}
         />
-        <button className="search-btn">Search</button>
+        <button className="search-btn" onClick={handleSearch}>
+          Search
+        </button>
       </div>
 
       {/* ---------------- CATEGORIES ---------------- */}
       <div className="category-scroll">
         {categories.map((cat) => (
-          <button key={cat} className="category-btn">
+          <button
+            key={cat}
+            className="category-btn"
+            onClick={() => navigate(`/category/${cat}`)}
+          >
             {cat}
           </button>
         ))}
@@ -78,21 +117,52 @@ export default function HomePage() {
       <div className="hero">
         <h1>Latest Electronics, Best Prices</h1>
         <p>Get premium gadgets delivered to your door</p>
-        <button className="shop-btn">Shop Now</button>
+        <button className="shop-btn" onClick={() => navigate("/products")}>
+          Shop Now
+        </button>
       </div>
 
       {/* ---------------- PRODUCT GRID ---------------- */}
       <h2 className="section-title">Trending Products</h2>
       <div className="product-grid">
-        {products.map((item) => (
-          <div key={item.id} className="product-card">
-            <img src={item.img} alt={item.name} />
-            <h3>{item.name}</h3>
-            <p className="price">{item.price}</p>
-            <button className="buy-btn">View</button>
-          </div>
-        ))}
+        {loading ? (
+          <p>Loading products...</p>
+        ) : products.length === 0 ? (
+          <p>No products available.</p>
+        ) : (
+          products.map((item) => (
+            <div key={item._id} className="product-card">
+
+              {/* Fixed-size image */}
+              <div className="product-image-wrapper">
+                <img
+                  src={item.imageUrl || "/placeholder.png"}
+                  alt={item.name}
+                  loading="lazy"
+                />
+              </div>
+
+              {/* Clickable product name */}
+              <h3
+                className="product-name"
+                onClick={() => navigate(`/product/${item._id}`)}
+              >
+                {item.name}
+              </h3>
+
+              <p className="price">${item.price}</p>
+
+              <button
+                className="buy-btn"
+                onClick={() => navigate(`/product/${item._id}`)}
+              >
+                View
+              </button>
+            </div>
+          ))
+        )}
       </div>
+
     </div>
   );
 }
