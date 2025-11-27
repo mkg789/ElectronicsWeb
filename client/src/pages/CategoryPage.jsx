@@ -2,6 +2,18 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import API from "../api";
 
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  Button,
+  CircularProgress,
+  Alert,
+} from "@mui/material";
+
 export default function CategoryPage() {
   const { name } = useParams();
   const navigate = useNavigate();
@@ -22,44 +34,60 @@ export default function CategoryPage() {
     load();
   }, [name]);
 
+  if (loading)
+    return (
+      <Box display="flex" justifyContent="center" mt={10}>
+        <CircularProgress />
+      </Box>
+    );
+
   return (
-    <div className="category-container">
-      <h2 className="category-title">{name} Products</h2>
+    <Box p={3}>
+      <Typography variant="h4" fontWeight={600} mb={3}>
+        {name} Products
+      </Typography>
 
-      {loading ? (
-        <p>Loading products...</p>
-      ) : products.length === 0 ? (
-        <p>No products available in this category.</p>
+      {products.length === 0 ? (
+        <Alert severity="info">No products available in this category.</Alert>
       ) : (
-        <div className="product-grid">
+        <Grid container spacing={3}>
           {products.map((p) => (
-            <div key={p._id} className="product-card">
+            <Grid item xs={12} sm={6} md={4} lg={3} key={p._id}>
+              <Card sx={{ boxShadow: 3 }}>
+                <CardMedia
+                  component="img"
+                  height="180"
+                  image={p.imageUrl || "/placeholder.png"}
+                  alt={p.name}
+                />
 
-              {/* Fixed-size image */}
-              <div className="product-image-wrapper">
-                <img src={p.imageUrl || "/placeholder.png"} alt={p.name} />
-              </div>
+                <CardContent>
+                  <Typography
+                    variant="h6"
+                    fontWeight={600}
+                    sx={{ cursor: "pointer", mb: 1 }}
+                    onClick={() => navigate(`/product/${p._id}`)}
+                  >
+                    {p.name}
+                  </Typography>
 
-              {/* Clickable product name */}
-              <h3
-                className="product-name"
-                onClick={() => navigate(`/product/${p._id}`)}
-              >
-                {p.name}
-              </h3>
+                  <Typography variant="body1" color="primary" mb={2}>
+                    ${p.price}
+                  </Typography>
 
-              <p className="price">${p.price}</p>
-
-              <button
-                className="buy-btn"
-                onClick={() => navigate(`/product/${p._id}`)}
-              >
-                View
-              </button>
-            </div>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    onClick={() => navigate(`/product/${p._id}`)}
+                  >
+                    View
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </div>
+        </Grid>
       )}
-    </div>
+    </Box>
   );
 }

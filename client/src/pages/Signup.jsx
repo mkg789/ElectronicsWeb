@@ -1,9 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Signup.css"; 
+
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  Alert,
+} from "@mui/material";
 
 export default function Signup() {
   const navigate = useNavigate();
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -13,13 +25,15 @@ export default function Signup() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrorMsg(""); // Clear messages when typing
+    setSuccessMsg("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      setErrorMsg("Passwords do not match!");
       return;
     }
 
@@ -37,76 +51,120 @@ export default function Signup() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.msg || "Signup failed");
+        setErrorMsg(data.msg || "Signup failed");
         return;
       }
 
-      alert("Signup successful!");
-      navigate("/login");
+      setSuccessMsg("Signup successful! Redirecting...");
+      setTimeout(() => navigate("/login"), 1500);
     } catch (error) {
-      alert("Server error");
+      setErrorMsg("Server error, try again later.");
       console.error(error);
     }
   };
 
-
   return (
-    <div className="signup-container">
-      <h2>Create an Account</h2>
-      <form className="signup-form" onSubmit={handleSubmit}>
-        <label>
-          Name:
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-        </label>
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="100vh"
+      bgcolor="#f1f3f6"
+      px={2}
+    >
+      <Card sx={{ maxWidth: 400, width: "100%", p: 2, boxShadow: 4 }}>
+        <CardContent>
+          <Typography variant="h5" fontWeight={600} textAlign="center" mb={2}>
+            Create an Account
+          </Typography>
 
-        <label>
-          Email:
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-        </label>
+          {/* Error Alert */}
+          {errorMsg && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {errorMsg}
+            </Alert>
+          )}
 
-        <label>
-          Password:
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-        </label>
+          {/* Success Alert */}
+          {successMsg && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {successMsg}
+            </Alert>
+          )}
 
-        <label>
-          Confirm Password:
-          <input
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-          />
-        </label>
+          <form onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              label="Name"
+              name="name"
+              variant="outlined"
+              value={formData.name}
+              onChange={handleChange}
+              sx={{ mb: 2 }}
+              required
+            />
 
-        <button type="submit" className="signup-btn">Sign Up</button>
-      </form>
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              name="email"
+              variant="outlined"
+              value={formData.email}
+              onChange={handleChange}
+              sx={{ mb: 2 }}
+              required
+            />
 
-      <p>
-        Already have an account?{" "}
-        <span className="login-link" onClick={() => navigate("/login")}>
-          Login
-        </span>
-      </p>
-    </div>
+            <TextField
+              fullWidth
+              label="Password"
+              type="password"
+              name="password"
+              variant="outlined"
+              value={formData.password}
+              onChange={handleChange}
+              sx={{ mb: 2 }}
+              required
+            />
+
+            <TextField
+              fullWidth
+              label="Confirm Password"
+              type="password"
+              name="confirmPassword"
+              variant="outlined"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              sx={{ mb: 2 }}
+              required
+            />
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              sx={{ mt: 1, py: 1.2 }}
+            >
+              Sign Up
+            </Button>
+          </form>
+
+          <Typography textAlign="center" mt={2}>
+            Already have an account?{" "}
+            <span
+              style={{
+                color: "#1976d2",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+              onClick={() => navigate("/login")}
+            >
+              Login
+            </span>
+          </Typography>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

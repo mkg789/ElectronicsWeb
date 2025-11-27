@@ -1,11 +1,22 @@
-import "./Login.css";
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default function Login() {
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  Alert,
+} from "@mui/material";
+
+export default function Login({ onLogin }) {
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleLogin = async () => {
     try {
@@ -18,58 +29,112 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.msg || "Login failed");
+        setErrorMsg(data.msg || "Login failed");
         return;
       }
 
-      // Save JWT in localStorage
+      // Save JWT token
       localStorage.setItem("token", data.token);
 
-      alert("Login successful!");
+      // Save user info
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Notify App
+      if (typeof onLogin === "function") onLogin();
+
       navigate("/");
     } catch (error) {
       console.error(error);
-      alert("Server error");
+      setErrorMsg("Server error, please try again.");
     }
   };
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <h1>Welcome Back</h1>
-        <p className="login-subtitle">Login to continue</p>
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="100vh"
+      bgcolor="#f1f3f6"
+      px={2}
+    >
+      <Card sx={{ maxWidth: 400, width: "100%", p: 2, boxShadow: 4 }}>
+        <CardContent>
+          <Typography variant="h4" fontWeight={600} textAlign="center" mb={1}>
+            Welcome Back
+          </Typography>
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="login-input"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+          <Typography
+            variant="subtitle1"
+            color="text.secondary"
+            textAlign="center"
+            mb={3}
+          >
+            Login to continue
+          </Typography>
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="login-input"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          {errorMsg && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {errorMsg}
+            </Alert>
+          )}
 
-        <button className="login-submit" onClick={handleLogin}>
-          Login
-        </button>
+          <TextField
+            fullWidth
+            label="Email"
+            type="email"
+            variant="outlined"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setErrorMsg("");
+            }}
+            sx={{ mb: 2 }}
+            required
+          />
 
-        <p className="create-account">
-          New here?{" "}
-          <span className="signup-link" onClick={() => navigate("/signup")}>
-            Sign Up
-          </span>
-        </p>
+          <TextField
+            fullWidth
+            label="Password"
+            type="password"
+            variant="outlined"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setErrorMsg("");
+            }}
+            sx={{ mb: 3 }}
+            required
+          />
 
-        <button className="back-home" onClick={() => navigate("/")}>
-          ← Back to Home
-        </button>
-      </div>
-    </div>
+          <Button
+            variant="contained"
+            fullWidth
+            sx={{ py: 1.2, mb: 2 }}
+            onClick={handleLogin}
+          >
+            Login
+          </Button>
+
+          <Typography textAlign="center" mb={2}>
+            New here?{" "}
+            <span
+              style={{
+                color: "#1976d2",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+              onClick={() => navigate("/signup")}
+            >
+              Sign Up
+            </span>
+          </Typography>
+
+          <Button variant="text" fullWidth onClick={() => navigate("/")}>
+            ← Back to Home
+          </Button>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

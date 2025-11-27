@@ -1,7 +1,18 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import API from "../api";
-import "./ProductPage.css"; // reuse styling for product grid
+
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardMedia,
+  CardContent,
+  CardActions,
+  Button,
+  CircularProgress,
+} from "@mui/material";
 
 export default function SearchResults() {
   const [params] = useSearchParams();
@@ -33,44 +44,61 @@ export default function SearchResults() {
   }, [query]);
 
   return (
-    <div className="category-container" style={{ padding: "20px" }}>
-      <h2 className="category-title">Search Results for "{query}"</h2>
+    <Box p={3}>
+      <Typography variant="h4" fontWeight={600} mb={3}>
+        Search Results for "{query}"
+      </Typography>
 
       {loading ? (
-        <p>Loading results...</p>
+        <Box display="flex" justifyContent="center" mt={5}>
+          <CircularProgress />
+        </Box>
       ) : results.length === 0 ? (
-        <p>No products found for "{query}"</p>
+        <Typography variant="h6" color="text.secondary" mt={3}>
+          No products found for "{query}"
+        </Typography>
       ) : (
-        <div className="product-grid">
+        <Grid container spacing={3}>
           {results.map((p) => (
-            <div key={p._id} className="product-card">
-              <div className="product-image-wrapper">
-                <img
-                  src={p.imageUrl || "/placeholder.png"}
+            <Grid item xs={12} sm={6} md={4} lg={3} key={p._id}>
+              <Card sx={{ boxShadow: 3, cursor: "pointer" }}>
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={p.imageUrl || "/placeholder.png"}
                   alt={p.name}
-                  loading="lazy"
+                  onClick={() => navigate(`/product/${p._id}`)}
                 />
-              </div>
 
-              <h3
-                className="product-name"
-                onClick={() => navigate(`/product/${p._id}`)}
-              >
-                {p.name}
-              </h3>
+                <CardContent>
+                  <Typography
+                    variant="h6"
+                    fontWeight={600}
+                    sx={{ cursor: "pointer" }}
+                    onClick={() => navigate(`/product/${p._id}`)}
+                  >
+                    {p.name}
+                  </Typography>
 
-              <p className="price">${p.price}</p>
+                  <Typography variant="body1" fontWeight={500} color="primary">
+                    ${p.price}
+                  </Typography>
+                </CardContent>
 
-              <button
-                className="buy-btn"
-                onClick={() => navigate(`/product/${p._id}`)}
-              >
-                View
-              </button>
-            </div>
+                <CardActions>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    onClick={() => navigate(`/product/${p._id}`)}
+                  >
+                    View
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
           ))}
-        </div>
+        </Grid>
       )}
-    </div>
+    </Box>
   );
 }
