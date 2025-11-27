@@ -4,8 +4,9 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* 🛑 FIX 1: Set default background to light gray, overriding the dark mode default */
+  color: #213547; /* Setting a sensible default text color */
+  background-color: #F0F2F5; 
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -24,8 +25,9 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  /* 🛑 FIX 2: Removed 'display: flex' and 'place-items: center'
+     These lines cause the content to be centered vertically and horizontally, 
+     which is often why the global background shows on the edges. */
   min-width: 320px;
   min-height: 100vh;
 }
@@ -57,7 +59,8 @@ button:focus-visible {
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
-    background-color: #ffffff;
+    /* 🛑 FIX 3: Ensure the light scheme uses the same light gray */
+    background-color: #F0F2F5;
   }
   a:hover {
     color: #747bff;
