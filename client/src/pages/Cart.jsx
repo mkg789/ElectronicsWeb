@@ -1,6 +1,4 @@
-// CartPage.jsx (Complete and Visually Enhanced)
-
-import { useEffect, useState } from "react";
+// src/pages/CartPage.jsx
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -24,29 +22,11 @@ import OrderSummary from "../components/OrderSummary";
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
 
   // Get cart state and actions from the Context
   const { cart, isLoading, isUpdating } = useCartContext(); 
 
-  // 🛑 RESTORED ESSENTIAL USER LOADING LOGIC 🛑
-  // This logic is crucial for security and personalization.
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("user");
-      if (!saved) {
-        // Redirect to login if no user data is found
-        return navigate("/login");
-      }
-      setUser(JSON.parse(saved));
-    } catch (err) {
-      console.error("User parse error:", err);
-      // Redirect on error (e.g., corrupted localStorage)
-      navigate("/login");
-    }
-  }, [navigate]);
-  // ----------------------------------------
-
+  // Loading state
   if (isLoading)
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -64,14 +44,14 @@ export default function CartPage() {
     >
       <Box sx={{ maxWidth: "1200px", margin: "0 auto", px: 3 }}>
         
-        {/* Title uses user state if available */}
+        {/* Title */}
         <Typography 
           variant="h3" 
           fontWeight={700} 
           mb={5}
           color="text.primary"
         >
-          {user ? `${user.name}'s Cart` : "Your Shopping Cart"}
+          Your Shopping Cart
         </Typography>
 
         {cart.length === 0 ? (

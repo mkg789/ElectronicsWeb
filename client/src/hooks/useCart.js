@@ -1,27 +1,22 @@
-// hooks/useCart.js
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import API from "../api/api"; // Assuming your API instance
+import API from "../api/api";
 
 const useCart = () => {
-  const navigate = useNavigate();
   const [cart, setCart] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState({}); // To track per-item loading
+  const [isUpdating, setIsUpdating] = useState({}); // track per-product actions
 
-  // Centralized function to fetch the cart data
+  /* -------------------------------
+     FETCH CART ON MOUNT
+  --------------------------------*/
   const fetchCart = useCallback(async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const res = await API.get("/cart");
-      setCart(res.data);
-      return res.data; // Return data for potential chaining
+      setCart(res.data); // server returns cart array
     } catch (err) {
-      console.error("Failed to load cart:", err);
-      // Centralized error handling/redirect for cart loading
-      // navigate("/login"); 
-      setCart([]); // Set to empty on error/unauthorized
-      throw err;
+      console.error("Failed to fetch cart:", err);
+      setCart([]);
     } finally {
       setIsLoading(false);
     }
@@ -31,52 +26,84 @@ const useCart = () => {
     fetchCart();
   }, [fetchCart]);
 
-  // Helper function to update cart state after an action
-  const updateCartState = async (action) => {
+  /* -------------------------------
+     LOCAL UPDATE (fallback only)
+  --------------------------------*/
+  const updateLocalCart = (productId, qtyChange) => {
+    setCart(prev =>
+      prev
+        .map(item =>
+          item.productId._id === productId
+            ? { ...item, quantity: item.quantity + qtyChange }
+            : item
+        )
+        .filter(item => item.quantity > 0)
+    );
+  };
+
+  /* -------------------------------
+     UNIFIED ACTION HANDLER
+     - Calls API
+     - Uses server cart if returned
+     - Fallback to local update
+  --------------------------------*/
+  const handleAction = async (productId, apiCall, qtyChange = 0) => {
+    setIsUpdating(prev => ({ ...prev, [productId]: true }));
+
     try {
-      const res = await action();
-      setCart(res.data);
+      const res = await apiCall();
+
+      // Server always returns updated cart → use it
+      if (res && res.data && res.data.cart) {
+        setCart(res.data.cart);
+      } else {
+        // fallback (local)
+        if (qtyChange !== 0) {
+          updateLocalCart(productId, qtyChange);
+        } else {
+          setCart(prev =>
+            prev.filter(item => item.productId._id !== productId)
+          );
+        }
+      }
     } catch (err) {
-      console.error("Cart update error:", err);
-      // Optionally show a toast notification here
+      console.error("Cart action failed:", err);
+    } finally {
+      setIsUpdating(prev => ({ ...prev, [productId]: false }));
     }
   };
 
-  const handleAction = async (productId, apiCall) => {
-    // Set item-specific loading state
-    setIsUpdating(prev => ({ ...prev, [productId]: true }));
-    try {
-      await apiCall();
-      // Refetch the cart after successful action
-      await fetchCart(); 
-    } finally {
-      // Clear item-specific loading state
-      setIsUpdating(prev => ({ ...prev, [productId]: false }));
-    }
-  }
+  /* -------------------------------
+     ACTIONS (public API)
+  --------------------------------*/
+  const increaseQty = productId =>
+    handleAction(productId, () => API.post("/cart/add", { productId }), 1);
 
-  const increaseQty = (productId) => 
-    handleAction(productId, () => API.post("/cart/add", { productId }));
+  const decreaseQty = productId =>
+    handleAction(productId, () =>
+      API.post("/cart/remove-one", { productId }),
+      -1
+    );
 
-  const decreaseQty = (productId) =>
-    handleAction(productId, () => API.post("/cart/remove-one", { productId }));
-
-  const removeItem = (productId) =>
+  const removeItem = productId =>
     handleAction(productId, () => API.post("/cart/remove", { productId }));
 
+  /* -------------------------------
+     TOTAL PRICE
+  --------------------------------*/
   const totalPrice = cart.reduce(
     (sum, item) => sum + item.productId.price * item.quantity,
     0
   );
 
-  return { 
-    cart, 
-    isLoading, 
+  return {
+    cart,
+    isLoading,
     isUpdating,
-    totalPrice, 
-    increaseQty, 
-    decreaseQty, 
-    removeItem 
+    totalPrice,
+    increaseQty,
+    decreaseQty,
+    removeItem,
   };
 };
 

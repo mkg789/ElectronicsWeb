@@ -100,4 +100,24 @@ router.post("/remove", auth, async (req, res) => {
   }
 });
 
+/* -----------------------------------------
+   CLEAR CART (After successful order)
+--------------------------------------------*/
+router.post("/clear", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    user.cart = []; // remove all cart items
+    await user.save();
+
+    res.json({ success: true, message: "Cart cleared successfully" });
+
+  } catch (err) {
+    console.error("Cart clear error:", err);
+    res.status(500).json({ error: "Failed to clear cart" });
+  }
+});
+
+
 export default router;

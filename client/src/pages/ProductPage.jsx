@@ -16,18 +16,21 @@ import {
   Grid
 } from "@mui/material";
 
+import { useCartContext } from "../context/CartContext"; // ✅ import cart context
+
 export default function ProductPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const [user, setUser] = useState(null);
   const [loadingAction, setLoadingAction] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
+  const { cart, addToCart, addToWishlist } = useCartContext(); // ✅ use context
+
+  const [user, setUser] = useState(null);
   const [inCart, setInCart] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
 
@@ -54,31 +57,17 @@ export default function ProductPage() {
         setLoading(false);
       }
     };
-
     loadProduct();
   }, [id]);
 
   // Check if product is already in cart/wishlist
   useEffect(() => {
-    const checkUserData = async () => {
-      if (!user) return;
-      try {
-        const [cartRes, wishlistRes] = await Promise.all([
-          API.get("/cart"),
-          API.get("/wishlist"),
-        ]);
+    if (!cart) return;
+    setInCart(cart.some(item => item.productId._id === id));
+    // Optional: if you store wishlist in cart context:
+    // setInWishlist(wishlist.some(item => item.productId._id === id));
+  }, [cart, id]);
 
-        setInCart(cartRes.data.some((item) => item.productId._id === id));
-        setInWishlist(wishlistRes.data.some((item) => item.productId._id === id));
-      } catch (err) {
-        console.error("Failed to check cart/wishlist:", err);
-      }
-    };
-
-    checkUserData();
-  }, [user, id]);
-
-  // Show snackbar
   const showStatus = (msg) => {
     setStatusMsg(msg);
     setOpenSnackbar(true);
@@ -86,14 +75,12 @@ export default function ProductPage() {
 
   const handleAddToCart = async () => {
     if (!user) return navigate("/login");
-
     setLoadingAction(true);
     try {
-      await API.post("/cart/add", { productId: product._id });
-      setInCart(true);
+      await addToCart(product); // ✅ use context function
       showStatus("Added to cart 🛒");
     } catch (err) {
-      console.error("Add to cart error:", err);
+      console.error(err);
       showStatus("Failed to add to cart");
     } finally {
       setLoadingAction(false);
@@ -102,14 +89,12 @@ export default function ProductPage() {
 
   const handleAddToWishlist = async () => {
     if (!user) return navigate("/login");
-
     setLoadingAction(true);
     try {
-      await API.post("/wishlist/add", { productId: product._id });
-      setInWishlist(true);
+      await addToWishlist(product); // ✅ use context function
       showStatus("Added to wishlist ❤️");
     } catch (err) {
-      console.error("Wishlist error:", err);
+      console.error(err);
       showStatus("Failed to add to wishlist");
     } finally {
       setLoadingAction(false);
@@ -137,7 +122,6 @@ export default function ProductPage() {
       </Typography>
 
       <Grid container spacing={4}>
-        {/* IMAGE SECTION */}
         <Grid item xs={12} md={5}>
           <Card sx={{ boxShadow: 3 }}>
             <CardMedia
@@ -149,27 +133,14 @@ export default function ProductPage() {
           </Card>
         </Grid>
 
-        {/* DETAILS SECTION */}
         <Grid item xs={12} md={7}>
           <Card sx={{ p: 2, boxShadow: 3 }}>
             <CardContent>
-              <Typography variant="h6">
-                <strong>Price:</strong> ${product.price}
-              </Typography>
+              <Typography variant="h6"><strong>Price:</strong> ${product.price}</Typography>
+              <Typography variant="body1" mt={1}><strong>Category:</strong> {product.category}</Typography>
+              <Typography variant="body1" mt={3} fontWeight="bold">Description:</Typography>
+              <Typography variant="body2" mt={1} color="text.secondary">{product.description || "No description available."}</Typography>
 
-              <Typography variant="body1" mt={1}>
-                <strong>Category:</strong> {product.category}
-              </Typography>
-
-              <Typography variant="body1" mt={3} fontWeight="bold">
-                Description:
-              </Typography>
-
-              <Typography variant="body2" mt={1} color="text.secondary">
-                {product.description || "No description available."}
-              </Typography>
-
-              {/* ACTION BUTTONS */}
               <Box display="flex" gap={2} mt={4}>
                 <Button
                   variant="contained"
@@ -197,16 +168,13 @@ export default function ProductPage() {
         </Grid>
       </Grid>
 
-      {/* STATUS SNACKBAR */}
       <Snackbar
         open={openSnackbar}
         autoHideDuration={2000}
         onClose={() => setOpenSnackbar(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert severity="info" sx={{ width: "100%" }}>
-          {statusMsg}
-        </Alert>
+        <Alert severity="info" sx={{ width: "100%" }}>{statusMsg}</Alert>
       </Snackbar>
     </Box>
   );

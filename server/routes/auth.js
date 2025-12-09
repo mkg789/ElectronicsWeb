@@ -1,3 +1,4 @@
+// routes/user.js
 import express from "express";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
@@ -13,7 +14,7 @@ router.post("/signup", async (req, res) => {
 
   try {
     // Check if user exists
-    let existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ msg: "Email already registered" });
     }
@@ -36,7 +37,6 @@ router.post("/signup", async (req, res) => {
     return res.status(500).json({ msg: "Server error" });
   }
 });
-
 
 /* ---------------------------------------------
    LOGIN
@@ -72,11 +72,35 @@ router.post("/login", async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        shippingInfo: user.shippingInfo || {},
+        billingInfo: user.billingInfo || {},
       },
     });
 
   } catch (error) {
     console.error("Login error:", error);
+    return res.status(500).json({ msg: "Server error" });
+  }
+});
+
+/* ---------------------------------------------
+   UPDATE CHECKOUT INFO
+---------------------------------------------- */
+router.put("/:id/checkout-info", async (req, res) => {
+  const { id } = req.params;
+  const { shippingInfo, billingInfo } = req.body;
+
+  try {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    user.shippingInfo = shippingInfo;
+    user.billingInfo = billingInfo;
+
+    await user.save();
+    return res.json({ msg: "Checkout info updated", shippingInfo, billingInfo });
+  } catch (err) {
+    console.error("Checkout info update error:", err);
     return res.status(500).json({ msg: "Server error" });
   }
 });
