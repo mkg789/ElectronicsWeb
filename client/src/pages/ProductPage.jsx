@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import API from "../api/api";
 import { FaHeart } from "react-icons/fa";
 
@@ -13,104 +13,123 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
-  Grid
+  Grid,
 } from "@mui/material";
 
-import { useCartContext } from "../context/CartContext"; // ✅ import cart context
+import { useCartContext } from "../context/CartContext";
 
 export default function ProductPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingAction, setLoadingAction] = useState(false);
-  const [statusMsg, setStatusMsg] = useState("");
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-
-  const { cart, addToCart, addToWishlist } = useCartContext(); // ✅ use context
-
   const [user, setUser] = useState(null);
-  const [inCart, setInCart] = useState(false);
-  const [inWishlist, setInWishlist] = useState(false);
+  const [product, setProduct] = useState(null);
+  const [loadingProduct, setLoadingProduct] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  // Load user from localStorage
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
+
+  const { cart, wishlist, addToCart, addToWishlist } = useCartContext();
+
+  const inCart = useMemo(
+    () => cart?.some((item) => item.productId?._id === id),
+    [cart, id]
+  );
+
+  const inWishlist = useMemo(
+    () => wishlist?.some((item) => item.productId?._id === id),
+    [wishlist, id]
+  );
+
+  /** Load user from localStorage */
   useEffect(() => {
     try {
-      const savedUser = localStorage.getItem("user");
-      if (savedUser) setUser(JSON.parse(savedUser));
+      const stored = localStorage.getItem("user");
+      if (stored) setUser(JSON.parse(stored));
     } catch (err) {
-      console.error("Failed to parse user from localStorage", err);
+      console.error("Failed to read user", err);
     }
   }, []);
 
-  // Fetch product
+  /** Load product */
   useEffect(() => {
-    const loadProduct = async () => {
-      setLoading(true);
+    const fetchProduct = async () => {
+      setLoadingProduct(true);
       try {
         const res = await API.get(`/products/${id}`);
         setProduct(res.data);
       } catch (err) {
-        console.error("Failed to fetch product:", err);
+        console.error("Fetch product failed:", err);
       } finally {
-        setLoading(false);
+        setLoadingProduct(false);
       }
     };
-    loadProduct();
+
+    fetchProduct();
   }, [id]);
 
-  // Check if product is already in cart/wishlist
-  useEffect(() => {
-    if (!cart) return;
-    setInCart(cart.some(item => item.productId._id === id));
-    // Optional: if you store wishlist in cart context:
-    // setInWishlist(wishlist.some(item => item.productId._id === id));
-  }, [cart, id]);
+  /** Snackbar helper */
+  const showSnackbar = useCallback((message, severity = "info") => {
+    setSnackbar({ open: true, message, severity });
+  }, []);
 
-  const showStatus = (msg) => {
-    setStatusMsg(msg);
-    setOpenSnackbar(true);
-  };
+  /** Ensure user is logged in before performing action */
+  const requireUser = useCallback(() => {
+    if (!user) {
+      navigate("/login");
+      return false;
+    }
+    return true;
+  }, [user, navigate]);
 
+  /** Add product to cart */
   const handleAddToCart = async () => {
-    if (!user) return navigate("/login");
-    setLoadingAction(true);
+    if (!requireUser()) return;
+    setActionLoading(true);
+
     try {
-      await addToCart(product); // ✅ use context function
-      showStatus("Added to cart 🛒");
+      await addToCart(product);
+      showSnackbar("Added to cart 🛒");
     } catch (err) {
       console.error(err);
-      showStatus("Failed to add to cart");
+      showSnackbar("Failed to add to cart", "error");
     } finally {
-      setLoadingAction(false);
+      setActionLoading(false);
     }
   };
 
+  /** Add product to wishlist */
   const handleAddToWishlist = async () => {
-    if (!user) return navigate("/login");
-    setLoadingAction(true);
+    if (!requireUser()) return;
+    setActionLoading(true);
+
     try {
-      await addToWishlist(product); // ✅ use context function
-      showStatus("Added to wishlist ❤️");
+      await addToWishlist(product);
+      showSnackbar("Added to wishlist ❤️");
     } catch (err) {
       console.error(err);
-      showStatus("Failed to add to wishlist");
+      showSnackbar("Failed to add to wishlist", "error");
     } finally {
-      setLoadingAction(false);
+      setActionLoading(false);
     }
   };
 
-  if (loading)
+  /** Loading state */
+  if (loadingProduct)
     return (
       <Box display="flex" justifyContent="center" mt={10}>
         <CircularProgress />
       </Box>
     );
 
+  /** No product */
   if (!product)
     return (
-      <Typography variant="h6" textAlign="center" mt={4} color="error">
+      <Typography variant="h6" textAlign="center" mt={6} color="error">
         Product not found.
       </Typography>
     );
@@ -122,43 +141,57 @@ export default function ProductPage() {
       </Typography>
 
       <Grid container spacing={4}>
+        {/* PRODUCT IMAGE */}
         <Grid item xs={12} md={5}>
           <Card sx={{ boxShadow: 3 }}>
             <CardMedia
               component="img"
               height="350"
-              image={product.imageUrl || "/placeholder.png"}
+              image={product.imageUrl || "https://placehold.co/600x400?text=No+Image"}
               alt={product.name}
             />
           </Card>
         </Grid>
 
+        {/* PRODUCT DETAILS */}
         <Grid item xs={12} md={7}>
           <Card sx={{ p: 2, boxShadow: 3 }}>
             <CardContent>
-              <Typography variant="h6"><strong>Price:</strong> ${product.price}</Typography>
-              <Typography variant="body1" mt={1}><strong>Category:</strong> {product.category}</Typography>
-              <Typography variant="body1" mt={3} fontWeight="bold">Description:</Typography>
-              <Typography variant="body2" mt={1} color="text.secondary">{product.description || "No description available."}</Typography>
+              <Typography variant="h6">
+                <strong>Price:</strong> ${product.price}
+              </Typography>
 
+              <Typography variant="body1" mt={1}>
+                <strong>Category:</strong> {product.category}
+              </Typography>
+
+              <Typography variant="body1" mt={3} fontWeight="bold">
+                Description:
+              </Typography>
+
+              <Typography variant="body2" mt={1} color="text.secondary">
+                {product.description || "No description available."}
+              </Typography>
+
+              {/* ACTION BUTTONS */}
               <Box display="flex" gap={2} mt={4}>
                 <Button
                   variant="contained"
                   color="primary"
                   fullWidth
+                  disabled={inCart || actionLoading}
                   onClick={handleAddToCart}
-                  disabled={!product || loadingAction || inCart}
                 >
-                  {inCart ? "In Cart 🛒" : "Add to Cart 🛒"}
+                  {inCart ? "In Cart 🛒" : "Add to Cart"}
                 </Button>
 
                 <Button
                   variant="outlined"
                   color="error"
                   fullWidth
-                  onClick={handleAddToWishlist}
-                  disabled={!product || loadingAction || inWishlist}
                   startIcon={<FaHeart />}
+                  disabled={inWishlist || actionLoading}
+                  onClick={handleAddToWishlist}
                 >
                   {inWishlist ? "In Wishlist ❤️" : "Wishlist"}
                 </Button>
@@ -168,13 +201,16 @@ export default function ProductPage() {
         </Grid>
       </Grid>
 
+      {/* SNACKBAR */}
       <Snackbar
-        open={openSnackbar}
+        open={snackbar.open}
         autoHideDuration={2000}
-        onClose={() => setOpenSnackbar(false)}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert severity="info" sx={{ width: "100%" }}>{statusMsg}</Alert>
+        <Alert severity={snackbar.severity} sx={{ width: "100%" }}>
+          {snackbar.message}
+        </Alert>
       </Snackbar>
     </Box>
   );

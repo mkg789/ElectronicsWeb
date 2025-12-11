@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import API from "../api/api";
 import {
@@ -14,9 +14,19 @@ import {
   Snackbar,
   Alert,
   Paper,
+  Skeleton,
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+
+// Debounce helper
+const debounce = (fn, delay) => {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+};
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -25,42 +35,40 @@ export default function ProductsPage() {
   const [user, setUser] = useState(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
 
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+  // Snackbar
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
-  // Load logged in user
+  // Restore logged user
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) setUser(JSON.parse(savedUser));
+    const saved = localStorage.getItem("user");
+    if (saved) setUser(JSON.parse(saved));
   }, []);
 
-  // Fetch categories
+  // Load categories
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const res = await API.get("/products/categories/all");
-        setCategories(res.data);
-      } catch (err) {
-        console.error("Failed to fetch categories:", err);
-      }
-    };
-    loadCategories();
+    API.get("/products/categories/all")
+      .then((res) => setCategories(res.data))
+      .catch((err) => console.error("Failed to load categories:", err));
   }, []);
 
-  // Fetch products
-  useEffect(() => {
-    const loadProducts = async () => {
+  // Fetch products — memoized for performance
+  const fetchProducts = useCallback(
+    async (category, search) => {
       setLoading(true);
       try {
         let url = "/products";
-        if (selectedCategory) url = `/products/category/${selectedCategory}`;
-        else if (searchQuery) url = `/products/search?q=${encodeURIComponent(searchQuery)}`;
+        if (category) url = `/products/category/${category}`;
+        else if (search) url = `/products/search?q=${encodeURIComponent(search)}`;
+
         const res = await API.get(url);
         setProducts(res.data);
       } catch (err) {
@@ -68,40 +76,48 @@ export default function ProductsPage() {
       } finally {
         setLoading(false);
       }
-    };
-    loadProducts();
-  }, [selectedCategory, searchQuery, location]);
+    },
+    []
+  );
 
-  const handleProductAction = async (action, item) => {
+  // Debounced search
+  const debouncedFetch = useMemo(() => debounce(fetchProducts, 350), [fetchProducts]);
+
+  // Trigger product fetch on filter or search changes
+  useEffect(() => {
+    if (searchQuery) debouncedFetch(selectedCategory, searchQuery);
+    else fetchProducts(selectedCategory, "");
+  }, [selectedCategory, searchQuery, location, debouncedFetch, fetchProducts]);
+
+  // Snackbar helper
+  const showSnackbar = useCallback((msg, severity = "success") => {
+    setSnackbar({ open: true, message: msg, severity });
+  }, []);
+
+  const handleProductAction = async (type, item) => {
     if (!user) {
-      setSnackbarMessage(`Please log in to add items to your ${action}.`);
-      setSnackbarSeverity("warning");
-      setSnackbarOpen(true);
+      showSnackbar(`Please log in to use your ${type}.`, "warning");
       setTimeout(() => navigate("/login"), 1200);
       return;
     }
 
     try {
-      if (action === "cart") await API.post("/cart/add", { productId: item._id });
-      if (action === "wishlist") await API.post("/wishlist/add", { productId: item._id });
+      const endpoint = type === "cart" ? "/cart/add" : "/wishlist/add";
+      await API.post(endpoint, { productId: item._id });
 
-      setSnackbarMessage(
-        action === "cart"
+      showSnackbar(
+        type === "cart"
           ? `${item.name} added to your cart!`
           : `${item.name} added to your wishlist ❤️`
       );
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
     } catch (err) {
       console.error(err);
-      setSnackbarMessage("Something went wrong.");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
+      showSnackbar("Something went wrong.", "error");
     }
   };
 
-  const handleSnackbarClose = (event, reason) => {
-    if (reason !== "clickaway") setSnackbarOpen(false);
+  const handleSnackbarClose = (_, reason) => {
+    if (reason !== "clickaway") setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
   return (
@@ -112,112 +128,109 @@ export default function ProductsPage() {
 
       {/* Categories */}
       <Stack direction="row" spacing={2} overflow="auto" pb={2} mb={3}>
-        <Paper
-          elevation={2}
-          onClick={() => setSelectedCategory("")}
-          sx={{
-            px: 3,
-            py: 2,
-            borderRadius: 3,
-            cursor: "pointer",
-            background: selectedCategory === "" ? "#1976d2" : "white",
-            color: selectedCategory === "" ? "white" : "black",
-            "&:hover": { boxShadow: 6, transform: "translateY(-3px)" },
-            transition: "0.25s",
-          }}
-        >
-          <Typography fontWeight={600}>All</Typography>
-        </Paper>
+        {["All", ...categories].map((cat) => {
+          const isActive = cat === "All" ? selectedCategory === "" : selectedCategory === cat;
 
-        {categories.map((cat) => (
-          <Paper
-            key={cat}
-            elevation={2}
-            onClick={() => setSelectedCategory(cat)}
-            sx={{
-              px: 3,
-              py: 2,
-              borderRadius: 3,
-              cursor: "pointer",
-              background: selectedCategory === cat ? "#1976d2" : "white",
-              color: selectedCategory === cat ? "white" : "black",
-              "&:hover": { boxShadow: 6, transform: "translateY(-3px)" },
-              transition: "0.25s",
-            }}
-          >
-            <Typography fontWeight={600}>{cat}</Typography>
-          </Paper>
-        ))}
+          return (
+            <Paper
+              key={cat}
+              elevation={2}
+              onClick={() => setSelectedCategory(cat === "All" ? "" : cat)}
+              sx={{
+                px: 3,
+                py: 1.5,
+                borderRadius: 3,
+                cursor: "pointer",
+                transition: "0.25s",
+                background: isActive ? "#1976d2" : "white",
+                color: isActive ? "white" : "black",
+                "&:hover": { boxShadow: 6, transform: "translateY(-3px)" },
+              }}
+            >
+              <Typography fontWeight={600}>{cat}</Typography>
+            </Paper>
+          );
+        })}
       </Stack>
 
       {/* Products Grid */}
-      {loading ? (
-        <Typography>Loading products...</Typography>
-      ) : (
-        <Grid container spacing={3}>
-          {products.map((item) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={item._id}>
-              <Card
-                sx={{
-                  borderRadius: 4,
-                  boxShadow: 3,
-                  overflow: "hidden",
-                  transition: "0.3s",
-                  "&:hover": { transform: "translateY(-6px)", boxShadow: 8 },
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  height="220"
-                  image={item.imageUrl || `https://placehold.co/400x200?text=${item.name}`}
-                />
-                <CardContent>
-                  <Typography
-                    fontWeight={600}
-                    noWrap
-                    sx={{ cursor: "pointer" }}
-                    onClick={() => navigate(`/product/${item._id}`)}
-                  >
-                    {item.name}
-                  </Typography>
-                  <Typography variant="h6" color="primary" fontWeight={700} my={1}>
-                    ${item.price.toFixed(2)}
-                  </Typography>
-                  <Stack direction="row" spacing={1}>
-                    <Button
-                      size="small"
-                      fullWidth
-                      variant="contained"
-                      startIcon={<ShoppingCartIcon />}
-                      onClick={() => handleProductAction("cart", item)}
-                      sx={{ borderRadius: 2 }}
+      <Grid container spacing={3}>
+        {loading
+          ? [...Array(8)].map((_, i) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={i}>
+                <Skeleton variant="rectangular" height={260} sx={{ borderRadius: 3 }} />
+              </Grid>
+            ))
+          : products.map((item) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={item._id}>
+                <Card
+                  sx={{
+                    borderRadius: 3,
+                    boxShadow: 3,
+                    overflow: "hidden",
+                    transition: "0.3s",
+                    "&:hover": { transform: "translateY(-6px)", boxShadow: 8 },
+                  }}
+                >
+                  <CardMedia
+                    component="img"
+                    height="220"
+                    image={item.imageUrl || `https://placehold.co/400x200?text=${item.name}`}
+                    sx={{ objectFit: "cover" }}
+                  />
+
+                  <CardContent>
+                    <Typography
+                      fontWeight={600}
+                      noWrap
+                      sx={{ cursor: "pointer" }}
+                      onClick={() => navigate(`/product/${item._id}`)}
                     >
-                      Cart
-                    </Button>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleProductAction("wishlist", item)}
-                      sx={{ borderRadius: 2, border: "1px solid #f44336" }}
-                    >
-                      <FavoriteBorderIcon />
-                    </IconButton>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+                      {item.name}
+                    </Typography>
+
+                    <Typography variant="h6" color="primary" fontWeight={700} my={1}>
+                      ${item.price.toFixed(2)}
+                    </Typography>
+
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        fullWidth
+                        size="small"
+                        variant="contained"
+                        startIcon={<ShoppingCartIcon />}
+                        onClick={() => handleProductAction("cart", item)}
+                        sx={{ borderRadius: 2 }}
+                      >
+                        Cart
+                      </Button>
+
+                      <IconButton
+                        color="error"
+                        onClick={() => handleProductAction("wishlist", item)}
+                        sx={{
+                          borderRadius: 2,
+                          border: "1px solid #f44336",
+                        }}
+                      >
+                        <FavoriteBorderIcon />
+                      </IconButton>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+      </Grid>
 
       {/* Snackbar */}
       <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
+        open={snackbar.open}
+        autoHideDuration={2500}
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert severity={snackbarSeverity} onClose={handleSnackbarClose}>
-          {snackbarMessage}
+        <Alert severity={snackbar.severity} onClose={handleSnackbarClose}>
+          {snackbar.message}
         </Alert>
       </Snackbar>
     </Box>

@@ -1,4 +1,5 @@
 // src/pages/CartPage.jsx
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -14,6 +15,7 @@ import {
   Card,
   Stack,
 } from "@mui/material";
+
 import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 
 import { useCartContext } from "../context/CartContext"; 
@@ -23,8 +25,13 @@ import OrderSummary from "../components/OrderSummary";
 export default function CartPage() {
   const navigate = useNavigate();
 
-  // Get cart state and actions from the Context
-  const { cart, isLoading, isUpdating } = useCartContext(); 
+  // Added loadCart here! 🔥
+  const { cart, isLoading, isUpdating, loadCart } = useCartContext();
+
+  // 🔥 Auto-refresh cart whenever CartPage loads
+  useEffect(() => {
+    loadCart();
+  }, [loadCart]);
 
   // Loading state
   if (isLoading)
@@ -81,7 +88,7 @@ export default function CartPage() {
           <Stack
             direction={{ xs: "column", md: "row" }}
             spacing={4}
-            alignItems="flex-start" 
+            alignItems="flex-start"
           >
             {/* Cart Items Table */}
             <Card

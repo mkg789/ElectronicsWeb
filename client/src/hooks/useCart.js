@@ -1,19 +1,20 @@
+// src/hooks/useCart.js
 import { useState, useEffect, useCallback } from "react";
 import API from "../api/api";
 
 const useCart = () => {
   const [cart, setCart] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState({}); // track per-product actions
+  const [isUpdating, setIsUpdating] = useState({}); // per-item loading state
 
-  /* -------------------------------
-     FETCH CART ON MOUNT
-  --------------------------------*/
-  const fetchCart = useCallback(async () => {
+  /* ---------------------------------------
+      LOAD CART FROM SERVER
+  ----------------------------------------*/
+  const loadCart = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await API.get("/cart");
-      setCart(res.data); // server returns cart array
+      setCart(res.data || []);
     } catch (err) {
       console.error("Failed to fetch cart:", err);
       setCart([]);
@@ -23,12 +24,12 @@ const useCart = () => {
   }, []);
 
   useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
+    loadCart();
+  }, [loadCart]);
 
-  /* -------------------------------
-     LOCAL UPDATE (fallback only)
-  --------------------------------*/
+  /* ---------------------------------------
+      LOCAL UPDATE (fallback)
+  ----------------------------------------*/
   const updateLocalCart = (productId, qtyChange) => {
     setCart(prev =>
       prev
@@ -41,23 +42,20 @@ const useCart = () => {
     );
   };
 
-  /* -------------------------------
-     UNIFIED ACTION HANDLER
-     - Calls API
-     - Uses server cart if returned
-     - Fallback to local update
-  --------------------------------*/
+  /* ---------------------------------------
+      UNIFIED ACTION HANDLER
+  ----------------------------------------*/
   const handleAction = async (productId, apiCall, qtyChange = 0) => {
     setIsUpdating(prev => ({ ...prev, [productId]: true }));
 
     try {
       const res = await apiCall();
 
-      // Server always returns updated cart → use it
-      if (res && res.data && res.data.cart) {
+      // If server responds with updated cart → use it
+      if (res?.data?.cart) {
         setCart(res.data.cart);
       } else {
-        // fallback (local)
+        // fallback local updates
         if (qtyChange !== 0) {
           updateLocalCart(productId, qtyChange);
         } else {
@@ -73,24 +71,25 @@ const useCart = () => {
     }
   };
 
-  /* -------------------------------
-     ACTIONS (public API)
-  --------------------------------*/
+  /* ---------------------------------------
+      PUBLIC ACTIONS
+  ----------------------------------------*/
   const increaseQty = productId =>
     handleAction(productId, () => API.post("/cart/add", { productId }), 1);
 
   const decreaseQty = productId =>
-    handleAction(productId, () =>
-      API.post("/cart/remove-one", { productId }),
+    handleAction(
+      productId,
+      () => API.post("/cart/remove-one", { productId }),
       -1
     );
 
   const removeItem = productId =>
     handleAction(productId, () => API.post("/cart/remove", { productId }));
 
-  /* -------------------------------
-     TOTAL PRICE
-  --------------------------------*/
+  /* ---------------------------------------
+      TOTAL PRICE
+  ----------------------------------------*/
   const totalPrice = cart.reduce(
     (sum, item) => sum + item.productId.price * item.quantity,
     0
@@ -101,9 +100,14 @@ const useCart = () => {
     isLoading,
     isUpdating,
     totalPrice,
+
+    // expose actions
     increaseQty,
     decreaseQty,
     removeItem,
+
+    // IMPORTANT: expose loadCart to refresh pages
+    loadCart,
   };
 };
 
