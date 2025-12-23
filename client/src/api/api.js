@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://electronicsweb.onrender.com/api",
+  // Use Vite environment variable when provided (VITE_API_URL), otherwise fallback to hosted backend
+  baseURL: import.meta.env.VITE_API_URL || "https://electronicsweb.onrender.com/api",
 });
 
 // attach token automatically

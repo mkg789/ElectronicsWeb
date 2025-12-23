@@ -14,3 +14,69 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+src/
+├─ app/
+│ ├─ App.jsx
+│ ├─ router.jsx
+│ └─ queryClient.js   ← (React Query setup)
+│
+├─ features/
+│ ├─ auth/
+│ │ ├─ api.js
+│ │ ├─ AuthContext.jsx
+│ │ ├─ Login.jsx
+│ │ └─ Signup.jsx
+│ │
+│ ├─ products/
+│ │ ├─ api.js
+│ │ ├─ hooks.js
+│ │ ├─ ProductCard.jsx
+│ │ ├─ ProductGrid.jsx
+│ │ ├─ ProductsPage.jsx
+│ │ ├─ CategoryPage.jsx
+│ │ └─ SearchResults.jsx
+│ │
+│ ├─ cart/
+│ │ ├─ api.js
+│ │ ├─ CartContext.jsx
+│ │ ├─ useCart.js
+│ │ ├─ CartItem.jsx
+│ │ ├─ CartPage.jsx
+│ │ └─ CheckoutPage.jsx
+│ │
+│ ├─ orders/
+│ │ ├─ api.js
+│ │ ├─ OrderSummary.jsx
+│ │ ├─ OrderHistoryPage.jsx
+│ │ ├─ OrderDetailsPage.jsx
+│ │ └─ OrderSuccess.jsx
+│ │
+│ ├─ wishlist/
+│ │ ├─ api.js
+│ │ ├─ WishlistPage.jsx
+│ │ └─ useWishlist.js
+│ │
+│ └─ home/
+│   ├─ HomePage.jsx
+│   ├─ HeroBanner.jsx
+│   ├─ CategoryStrip.jsx
+│   └─ FeaturedProducts.jsx
+│
+├─ shared/
+│ ├─ components/
+│ │ ├─ Navbar.jsx
+│ │ ├─ Footer.jsx
+│ │ └─ Loader.jsx
+│ │
+│ ├─ ui/
+│ │ ├─ ConfirmDialog.jsx
+│ │ └─ EmptyState.jsx
+│ │
+│ └─ utils/
+│   └─ formatCurrency.js
+│
+├─ api/
+│ └─ axios.js
+│
+└─ index.jsx

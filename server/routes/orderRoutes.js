@@ -4,6 +4,7 @@ import Order from "../models/Order.js";
 import User from "../models/User.js";
 import Product from "../models/Product.js";
 import authMiddleware from "../middleware/authMiddleware.js";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -25,15 +26,20 @@ router.get("/history", authMiddleware, async (req, res) => {
 
 // GET /api/orders/:orderId (Get specific order details)
 router.get("/:orderId", authMiddleware, async (req, res) => {
+  const { orderId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    return res.status(400).json({ msg: "Invalid order id" });
+  }
+
   try {
-    const order = await Order.findById(req.params.orderId)
+    const order = await Order.findById(orderId)
       .populate("cart.productId")
       .populate("userId", "name email");
 
     if (!order) return res.status(404).json({ msg: "Order not found" });
 
     // Verify order belongs to user
-    if (order.userId._id.toString() !== req.userId) {
+    if (order.userId.toString() !== req.userId) {
       return res.status(403).json({ msg: "Unauthorized" });
     }
 
