@@ -18,18 +18,21 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteIcon from "@mui/icons-material/DeleteOutlined";
 
 import { useCartContext } from "./CartContext";
+import { useNavigate } from "react-router-dom";
 
 export default function CartItem({ item }) {
   const { increaseQty, decreaseQty, removeItem, isUpdating } = useCartContext();
   const product = item.productId;
   const productId = product._id;
   const loading = isUpdating[productId];
+  const navigate = useNavigate();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  const handleNavigate = () => navigate(`/product/${productId}`);
+
   if (isMobile) {
-    // Mobile-friendly card layout
     return (
       <Card sx={{ mb: 2, borderRadius: 3, boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
         <CardContent>
@@ -37,13 +40,27 @@ export default function CartItem({ item }) {
             <Avatar
               src={product.imageUrl || "/placeholder.svg"}
               variant="rounded"
-              sx={{ width: 80, height: 80 }}
-              imgProps={{ onError: (e) => { e.target.onerror = null; e.target.src = "/placeholder.svg"; } }}
+              sx={{ width: 80, height: 80, cursor: "pointer" }}
+              onClick={handleNavigate}
+              imgProps={{
+                onError: (e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/placeholder.svg";
+                },
+              }}
             />
 
             <Box flex={1}>
-              <Typography fontWeight={600}>{product.name}</Typography>
-              <Typography color="primary" fontWeight={600}>${product.price.toFixed(2)}</Typography>
+              <Typography
+                fontWeight={600}
+                sx={{ cursor: "pointer" }}
+                onClick={handleNavigate}
+              >
+                {product.name}
+              </Typography>
+              <Typography color="primary" fontWeight={600}>
+                ${product.price.toFixed(2)}
+              </Typography>
 
               <Stack direction="row" spacing={1} alignItems="center" mt={1}>
                 <IconButton
@@ -86,13 +103,25 @@ export default function CartItem({ item }) {
         <Avatar
           src={product.imageUrl || "/placeholder.svg"}
           variant="rounded"
-          sx={{ width: 60, height: 60 }}
-          imgProps={{ onError: (e) => { e.target.onerror = null; e.target.src = "/placeholder.svg"; } }}
+          sx={{ width: 60, height: 60, cursor: "pointer" }}
+          onClick={handleNavigate}
+          imgProps={{
+            onError: (e) => {
+              e.target.onerror = null;
+              e.target.src = "/placeholder.svg";
+            },
+          }}
         />
       </TableCell>
 
       <TableCell>
-        <Typography fontWeight={600}>{product.name}</Typography>
+        <Typography
+          fontWeight={600}
+          sx={{ cursor: "pointer" }}
+          onClick={handleNavigate}
+        >
+          {product.name}
+        </Typography>
       </TableCell>
 
       <TableCell align="right">${product.price.toFixed(2)}</TableCell>

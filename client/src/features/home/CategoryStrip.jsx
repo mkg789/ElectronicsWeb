@@ -6,11 +6,18 @@ export default function CategoryStrip({ categories, loading }) {
   const navigate = useNavigate();
 
   return (
-    <Box sx={{ px: { xs: 2, sm: 5 }, maxWidth: 1200, mx: "auto", mt: 5 }}>
+    <Box
+      sx={{
+        px: { xs: 1.5, sm: 3, md: 0 },
+        maxWidth: 1200,
+        mx: "auto",
+        mt: { xs: 3, md: 5 },
+      }}
+    >
       <Typography
         variant="h5"
         fontWeight={700}
-        mb={3}
+        mb={{ xs: 2, md: 3 }}
         textAlign={{ xs: "center", md: "left" }}
       >
         Shop by Category
@@ -18,12 +25,14 @@ export default function CategoryStrip({ categories, loading }) {
 
       <Stack
         direction="row"
-        spacing={2}
+        spacing={{ xs: 1.5, sm: 2 }}
         overflow="auto"
         pb={2}
         sx={{
-          "&::-webkit-scrollbar": { display: "none" }, // hide scrollbar on webkit
-          scrollbarWidth: "none", // hide scrollbar on Firefox
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+          "&::-webkit-scrollbar": { display: "none" },
+          scrollbarWidth: "none",
         }}
       >
         {loading
@@ -31,9 +40,13 @@ export default function CategoryStrip({ categories, loading }) {
               <Skeleton
                 key={i}
                 variant="rectangular"
-                width={140}
-                height={50}
-                sx={{ borderRadius: 3, flexShrink: 0 }}
+                width={120}
+                height={44}
+                sx={{
+                  borderRadius: 3,
+                  flexShrink: 0,
+                  scrollSnapAlign: "start",
+                }}
               />
             ))
           : categories.map((cat) => (
@@ -41,22 +54,35 @@ export default function CategoryStrip({ categories, loading }) {
                 key={cat}
                 onClick={() => navigate(`/category/${cat}`)}
                 sx={{
-                  px: 3,
-                  py: 2,
+                  px: { xs: 2, sm: 3 },
+                  py: { xs: 1.2, sm: 1.6 },
+                  minWidth: { xs: 120, sm: 140 },
                   borderRadius: 3,
-                  minWidth: 140,
                   flexShrink: 0,
                   textAlign: "center",
                   cursor: "pointer",
-                  transition: "transform 0.2s, box-shadow 0.2s, background-color 0.2s",
-                  "&:hover": {
-                    boxShadow: 6,
-                    transform: "translateY(-3px)",
-                    bgcolor: "#eef",
+                  scrollSnapAlign: "start",
+                  transition: "background-color 0.2s, box-shadow 0.2s",
+
+                  // Touch-first behavior
+                  "&:active": {
+                    bgcolor: "grey.100",
+                  },
+
+                  // Hover only on devices that support it
+                  "@media (hover: hover)": {
+                    "&:hover": {
+                      boxShadow: 4,
+                      bgcolor: "#eef",
+                    },
                   },
                 }}
               >
-                <Typography fontWeight={600} noWrap>
+                <Typography
+                  fontWeight={600}
+                  fontSize={{ xs: "0.85rem", sm: "0.95rem" }}
+                  noWrap
+                >
                   {cat}
                 </Typography>
               </Paper>

@@ -9,6 +9,8 @@ import {
   Box,
   Stack,
   Skeleton,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -26,6 +28,9 @@ export default function FeaturedProducts({
   onToggleWishlist,
   onOpenProduct,
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const renderCartControls = (item) => {
     const cartItem = cart.find((c) => c.productId._id === item._id);
 
@@ -45,13 +50,27 @@ export default function FeaturedProducts({
     }
 
     return (
-      <Stack direction="row" spacing={1} justifyContent="center" mb={1}>
-        <IconButton onClick={() => onUpdateQty(item._id, "remove")}>
-          <RemoveIcon />
+      <Stack
+        direction={isMobile ? "column" : "row"}
+        spacing={1}
+        justifyContent="center"
+        alignItems="center"
+        mb={1}
+      >
+        <IconButton
+          size="small"
+          onClick={() => onUpdateQty(item._id, "remove")}
+        >
+          <RemoveIcon fontSize={isMobile ? "small" : "medium"} />
         </IconButton>
+
         <Typography fontWeight={700}>{cartItem.quantity}</Typography>
-        <IconButton onClick={() => onUpdateQty(item._id, "add")}>
-          <AddIcon />
+
+        <IconButton
+          size="small"
+          onClick={() => onUpdateQty(item._id, "add")}
+        >
+          <AddIcon fontSize={isMobile ? "small" : "medium"} />
         </IconButton>
       </Stack>
     );
@@ -59,18 +78,23 @@ export default function FeaturedProducts({
 
   return (
     <Box sx={{ px: { xs: 2, sm: 3 }, maxWidth: 1200, mx: "auto", mt: 6, pb: 8 }}>
-      <Typography variant="h5" fontWeight={700} mb={3} textAlign={{ xs: "center", md: "left" }}>
+      <Typography
+        variant="h5"
+        fontWeight={700}
+        mb={3}
+        textAlign={{ xs: "center", md: "left" }}
+      >
         Featured Products
       </Typography>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         {(loading ? Array.from({ length: 8 }) : products).map((item, i) => {
           if (loading) {
             return (
               <Grid xs={6} sm={4} md={3} key={i}>
                 <Skeleton
                   variant="rectangular"
-                  sx={{ borderRadius: 4, height: { xs: 200, sm: 250, md: 300 } }}
+                  sx={{ borderRadius: 4, height: { xs: 180, sm: 220, md: 280 } }}
                 />
               </Grid>
             );
@@ -93,17 +117,24 @@ export default function FeaturedProducts({
               >
                 <CardMedia
                   component="img"
-                  height={180}
+                  height={isMobile ? 150 : 180}
                   image={item.imageUrl || "/placeholder.svg"}
                   onClick={handleOpen}
-                  sx={{ cursor: "pointer" }}
+                  sx={{ cursor: "pointer", objectFit: "cover" }}
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = "/placeholder.svg";
                   }}
                 />
 
-                <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <CardContent
+                  sx={{
+                    flexGrow: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                  }}
+                >
                   <Box>
                     <Typography fontWeight={600} noWrap mb={0.5}>
                       {item.name}
@@ -123,6 +154,7 @@ export default function FeaturedProducts({
                       border: "1px solid #ccc",
                       justifyContent: "center",
                       py: 1,
+                      mt: isMobile ? 1 : 0,
                     }}
                   >
                     {isWished ? <FavoriteIcon /> : <FavoriteBorderIcon />}

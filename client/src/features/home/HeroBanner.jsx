@@ -9,42 +9,62 @@ export default function HeroBanner() {
       sx={{
         background: "linear-gradient(135deg, #004d99, #1976d2)",
         color: "white",
-        py: { xs: 6, sm: 10 },
-        px: { xs: 3, sm: 6 },
+
+        // Mobile-first spacing
+        py: { xs: 5, sm: 8, md: 10 },
+        px: { xs: 2, sm: 4, md: 6 },
+
         textAlign: "center",
-        borderRadius: "0 0 40px 40px",
-        boxShadow: 6,
-        mb: 4,
+        borderRadius: { xs: "0 0 24px 24px", sm: "0 0 40px 40px" },
+        boxShadow: { xs: 3, sm: 6 },
+        mb: { xs: 3, md: 4 },
+
+        // Prevent overflow on small screens
+        overflow: "hidden",
       }}
     >
-      <Typography variant="h3" fontWeight={700} mb={2}>
+      <Typography
+        variant="h4"
+        fontWeight={700}
+        mb={2}
+        sx={{
+          lineHeight: 1.2,
+        }}
+      >
         Find Your Next Tech Obsession
       </Typography>
+
       <Typography
-        variant="h6"
+        variant="body1"
         sx={{
           opacity: 0.9,
-          maxWidth: 600,
+          maxWidth: 520,
           mx: "auto",
-          mb: 4,
+          mb: { xs: 3, sm: 4 },
+          fontSize: { xs: "0.95rem", sm: "1rem" },
         }}
       >
         Shop premium, verified electronics with free express shipping.
       </Typography>
+
       <Button
         variant="contained"
+        fullWidth
+        size="large"
         onClick={() => navigate("/products")}
         sx={{
-          px: 5,
-          py: 1.5,
+          maxWidth: 320,
+          mx: "auto",
+          py: 1.4,
           borderRadius: 3,
-          fontSize: "1.1rem",
+          fontSize: { xs: "1rem", sm: "1.1rem" },
+          fontWeight: 600,
           bgcolor: "white",
           color: "primary.main",
+
           "&:hover": {
             bgcolor: "grey.100",
           },
-          transition: "all 0.3s ease",
         }}
       >
         Explore All Products

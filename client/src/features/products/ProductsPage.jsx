@@ -54,19 +54,26 @@ export default function ProductsPage() {
   if (error) {
     return (
       <Container
+        maxWidth="sm"
         sx={{
           py: { xs: 4, md: 6 },
           textAlign: "center",
+          px: { xs: 2, sm: 3 },
         }}
       >
         <Typography
           variant="h6"
-          color="error"
+          color="error.main"
           mb={2}
         >
           {error}
         </Typography>
-        <Button variant="contained" onClick={loadProducts}>
+        <Button
+          variant="contained"
+          size="large"
+          fullWidth
+          onClick={loadProducts}
+        >
           Retry
         </Button>
       </Container>
@@ -74,12 +81,19 @@ export default function ProductsPage() {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: { xs: 4, md: 6 } }}>
+    <Container
+      maxWidth="lg"
+      disableGutters
+      sx={{
+        px: { xs: 2, sm: 3 },
+        py: { xs: 3, md: 5 },
+      }}
+    >
       {/* Header */}
       <Typography
-        variant="h4"
+        variant="h5"
         fontWeight={700}
-        mb={3}
+        mb={{ xs: 2, md: 3 }}
         textAlign={{ xs: "center", md: "left" }}
       >
         All Products
@@ -89,8 +103,14 @@ export default function ProductsPage() {
       {products.length > 0 ? (
         <ProductGrid products={products} />
       ) : (
-        <Box textAlign="center" py={6}>
-          <Typography variant="body1" color="text.secondary">
+        <Box
+          textAlign="center"
+          py={{ xs: 4, md: 6 }}
+        >
+          <Typography
+            variant="body1"
+            color="text.secondary"
+          >
             No products available at the moment.
           </Typography>
         </Box>

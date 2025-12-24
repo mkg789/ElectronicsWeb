@@ -30,7 +30,6 @@ export default function HomePage() {
     toggleWishlist,
   } = useECommerceData(user, navigate);
 
-  // Memoized callback for product click
   const handleOpenProduct = useCallback(
     (id) => navigate(`/product/${id}`),
     [navigate]
@@ -42,6 +41,7 @@ export default function HomePage() {
         minHeight: "100vh",
         bgcolor: "#f5f7fa",
         pb: { xs: 6, md: 8 },
+        overflowX: "hidden", // prevents mobile horizontal scroll
       }}
     >
       <Helmet>
@@ -61,10 +61,20 @@ export default function HomePage() {
       <HeroBanner />
 
       {/* MAIN CONTENT */}
-      <Container maxWidth="xl" sx={{ px: { xs: 1.5, sm: 2, md: 3 }, mt: { xs: 3, md: 5 } }}>
+      <Container
+        maxWidth="lg"
+        disableGutters
+        sx={{
+          px: { xs: 1.5, sm: 2, md: 3 },
+          mt: { xs: 3, md: 5 },
+        }}
+      >
         {/* CATEGORIES */}
         <Box sx={{ mb: { xs: 3, md: 5 } }}>
-          <CategoryStrip categories={categories} loading={loading} />
+          <CategoryStrip
+            categories={categories}
+            loading={loading}
+          />
         </Box>
 
         {/* FEATURED PRODUCTS */}
@@ -83,15 +93,23 @@ export default function HomePage() {
       {/* SNACKBAR */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3500}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        autoHideDuration={3000}
+        onClose={() =>
+          setSnackbar(prev => ({ ...prev, open: false }))
+        }
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        sx={{ mb: { xs: 7, sm: 2 } }}
+        sx={{
+          mb: { xs: 7, sm: 2 }, // above mobile bottom nav
+        }}
       >
         <Alert
           severity={snackbar.severity}
           variant="filled"
-          sx={{ width: "100%", fontSize: { xs: "0.85rem", sm: "0.95rem" } }}
+          sx={{
+            width: "100%",
+            fontSize: { xs: "0.85rem", sm: "0.95rem" },
+            borderRadius: 2,
+          }}
         >
           {snackbar.message}
         </Alert>

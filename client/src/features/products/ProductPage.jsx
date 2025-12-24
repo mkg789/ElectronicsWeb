@@ -1,5 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { Box, Container, Typography, Snackbar, Alert } from "@mui/material";
+import {
+  Box,
+  Container,
+  Typography,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 
 import { useProduct } from "./hooks";
@@ -15,13 +21,28 @@ export default function ProductPage() {
   const { product, loading } = useProduct(id);
   const { cart, wishlist, addToCart, addToWishlist } = useCartContext();
 
-  const [snackbar, setSnackbar] = useState({ open: false, msg: "", type: "info" });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    msg: "",
+    type: "info",
+  });
   const [actionLoading, setActionLoading] = useState(false);
 
-  const inCart = useMemo(() => cart?.some(i => i.productId?._id === id), [cart, id]);
-  const inWishlist = useMemo(() => wishlist?.some(i => i.productId?._id === id), [wishlist, id]);
+  const inCart = useMemo(
+    () => cart?.some(i => i.productId?._id === id),
+    [cart, id]
+  );
 
-  useEffect(() => () => { mountedRef.current = false }, []);
+  const inWishlist = useMemo(
+    () => wishlist?.some(i => i.productId?._id === id),
+    [wishlist, id]
+  );
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const showSnackbar = useCallback((msg, type = "info") => {
     if (!mountedRef.current) return;
@@ -64,42 +85,76 @@ export default function ProductPage() {
 
   if (loading) return <Loader fullPage message="Loading product..." />;
 
-  if (!product)
+  if (!product) {
     return (
-      <Container sx={{ py: 6, textAlign: "center" }}>
+      <Container
+        maxWidth="sm"
+        sx={{
+          py: 6,
+          textAlign: "center",
+        }}
+      >
         <Typography variant="h6" color="error.main">
           Product not found
         </Typography>
       </Container>
     );
+  }
 
   return (
-    <Container maxWidth="xl" sx={{ py: { xs: 3, md: 6 } }}>
+    <Container
+      maxWidth="lg"
+      disableGutters
+      sx={{
+        px: { xs: 2, sm: 3 },
+        py: { xs: 2, md: 5 },
+      }}
+    >
+      {/* Product Title */}
       <Typography
-        variant="h4"
+        variant="h5"
         fontWeight={600}
-        mb={3}
-        textAlign={{ xs: "center", md: "left" }}
+        sx={{
+          mb: { xs: 2, md: 3 },
+          textAlign: { xs: "center", md: "left" },
+          wordBreak: "break-word",
+        }}
       >
         {product.name}
       </Typography>
 
-      <ProductDetails
-        product={product}
-        inCart={inCart}
-        inWishlist={inWishlist}
-        loading={actionLoading}
-        onAddToCart={handleCart}
-        onAddToWishlist={handleWishlist}
-      />
+      {/* Product Content */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: { xs: 2, md: 3 },
+        }}
+      >
+        <ProductDetails
+          product={product}
+          inCart={inCart}
+          inWishlist={inWishlist}
+          loading={actionLoading}
+          onAddToCart={handleCart}
+          onAddToWishlist={handleWishlist}
+        />
+      </Box>
 
+      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={2000}
+        autoHideDuration={2500}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        onClose={() =>
+          setSnackbar(prev => ({ ...prev, open: false }))
+        }
       >
-        <Alert severity={snackbar.type} variant="filled">
+        <Alert
+          severity={snackbar.type}
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
           {snackbar.msg}
         </Alert>
       </Snackbar>

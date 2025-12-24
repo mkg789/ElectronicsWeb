@@ -1,15 +1,22 @@
 import Grid from "../../shared/components/Grid2";
 import ProductCard from "./ProductCard";
-import { Container, Box } from "@mui/material";
+import { Container } from "@mui/material";
 
-export default function ProductGrid({ products, spacing = 3 }) {
+export default function ProductGrid({ products, spacing = 2 }) {
   return (
-    <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
+    <Container
+      maxWidth="lg"
+      disableGutters
+      sx={{
+        px: { xs: 1.5, sm: 2, md: 0 },
+        py: { xs: 2, md: 3 },
+      }}
+    >
       <Grid container spacing={spacing}>
         {products.map((product) => (
           <Grid
             key={product._id}
-            xs={12}
+            xs={6}
             sm={6}
             md={4}
             lg={3}
@@ -17,14 +24,7 @@ export default function ProductGrid({ products, spacing = 3 }) {
               display: "flex",
             }}
           >
-            <ProductCard
-              product={product}
-              sx={{
-                flexGrow: 1,
-                display: "flex",
-                flexDirection: "column",
-              }}
-            />
+            <ProductCard product={product} />
           </Grid>
         ))}
       </Grid>

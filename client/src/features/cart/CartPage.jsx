@@ -5,14 +5,10 @@ import {
   Typography,
   Button,
   CircularProgress,
-  Table,
-  TableBody,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableCell,
-  Card,
   Stack,
+  Card,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import ShoppingBasketIcon from "@mui/icons-material/ShoppingBasket";
 
@@ -23,6 +19,8 @@ import OrderSummary from "../orders/OrderSummary";
 export default function CartPage() {
   const navigate = useNavigate();
   const { cart, isLoading, isUpdating, loadCart } = useCartContext();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     loadCart();
@@ -41,8 +39,8 @@ export default function CartPage() {
     );
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#F0F2F5", py: { xs: 4, md: 6 } }}>
-      <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, md: 3 } }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "#F0F2F5", pb: { xs: 12, md: 6 } }}>
+      <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, md: 3 }, pt: { xs: 4, md: 6 } }}>
         <Typography
           variant="h3"
           fontWeight={700}
@@ -75,35 +73,56 @@ export default function CartPage() {
             </Button>
           </Box>
         ) : (
-          <Stack direction={{ xs: "column", md: "row" }} spacing={4} alignItems="flex-start">
-            {/* Cart Items */}
-            <Card sx={{ flex: 4, p: 3, borderRadius: 4, boxShadow: "0 4px 20px rgba(0,0,0,0.05)", width: "100%" }}>
-              <Box sx={{ overflowX: "auto" }}>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow sx={{ bgcolor: "#F8F9FA" }}>
-                        <TableCell sx={{ fontWeight: 600, width: "80px" }} />
-                        <TableCell sx={{ fontWeight: 600 }}>Product</TableCell>
-                        <TableCell sx={{ fontWeight: 600, textAlign: "right" }}>Price</TableCell>
-                        <TableCell sx={{ fontWeight: 600, textAlign: "center" }}>Quantity</TableCell>
-                        <TableCell sx={{ fontWeight: 600, textAlign: "right" }}>Subtotal</TableCell>
-                        <TableCell sx={{ fontWeight: 600, width: "80px" }} />
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {cart.map((item) => (
-                        <CartItem key={item._id} item={item} isUpdating={isUpdating} />
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
-            </Card>
+          <>
+            {/* Desktop Layout */}
+            {!isMobile && (
+              <Stack direction="row" spacing={4} alignItems="flex-start">
+                <Card sx={{ flex: 4, p: 3, borderRadius: 4, boxShadow: "0 4px 20px rgba(0,0,0,0.05)", width: "100%" }}>
+                  {cart.map((item) => (
+                    <CartItem key={item._id} item={item} isUpdating={isUpdating} />
+                  ))}
+                </Card>
+                <Box flex={1}>
+                  <OrderSummary />
+                </Box>
+              </Stack>
+            )}
 
-            {/* Order Summary */}
-            <OrderSummary />
-          </Stack>
+            {/* Mobile Layout */}
+            {isMobile && (
+              <Stack spacing={2}>
+                {cart.map((item) => (
+                  <CartItem key={item._id} item={item} isUpdating={isUpdating} />
+                ))}
+
+                {/* Sticky Checkout */}
+                <Box
+                  sx={{
+                    position: "fixed",
+                    bottom: 0,
+                    left: 0,
+                    width: "100%",
+                    bgcolor: "white",
+                    p: 2,
+                    boxShadow: "0 -4px 20px rgba(0,0,0,0.1)",
+                    borderTopLeftRadius: 12,
+                    borderTopRightRadius: 12,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography fontWeight={600}>Total: ${cart.reduce((acc, i) => acc + i.productId.price * i.quantity, 0).toFixed(2)}</Typography>
+                  <Button
+                    variant="contained"
+                    onClick={() => navigate("/checkout")}
+                  >
+                    Checkout
+                  </Button>
+                </Box>
+              </Stack>
+            )}
+          </>
         )}
 
         {/* Continue Shopping */}

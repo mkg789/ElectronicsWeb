@@ -29,6 +29,7 @@ const AddressForm = ({ data, onChange }) => {
     "zip",
     "country",
   ];
+
   return (
     <Stack spacing={2}>
       {fields.map((field) => (
@@ -50,22 +51,26 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
-  const emptyFields = { fullName: "", phone: "", address1: "", address2: "", city: "", state: "", zip: "", country: "" };
+  const emptyFields = {
+    fullName: "",
+    phone: "",
+    address1: "",
+    address2: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: "",
+  };
 
   const [shippingInfo, setShippingInfo] = useState(emptyFields);
   const [billingInfo, setBillingInfo] = useState(emptyFields);
-
   const [hasStoredShipping, setHasStoredShipping] = useState(false);
   const [hasStoredBilling, setHasStoredBilling] = useState(false);
-
   const [editingShipping, setEditingShipping] = useState(false);
   const [editingBilling, setEditingBilling] = useState(false);
-
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
-
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
 
-  /* ------------------ FETCH STORED INFO ------------------ */
   useEffect(() => {
     const fetchInfo = async () => {
       try {
@@ -142,9 +147,8 @@ export default function CheckoutPage() {
     navigate("/payment", { state: { orderData } });
   };
 
-  /* ------------------ ORDER SUMMARY ------------------ */
   const renderOrderSummary = () => (
-    <Card sx={{ p: 3, mb: 4 }}>
+    <Card sx={{ p: 3, mb: 4, overflowX: "auto" }}>
       <Typography variant="h5" fontWeight={600} mb={2}>
         Order Summary
       </Typography>
@@ -177,10 +181,13 @@ export default function CheckoutPage() {
         Checkout
       </Typography>
 
-      <Stack direction={{ xs: "column", md: "row" }} spacing={4} alignItems="flex-start">
-        <Box flex={2}>
-          {renderOrderSummary()}
-
+      <Stack
+        direction={{ xs: "column-reverse", md: "row" }}
+        spacing={4}
+        alignItems="flex-start"
+      >
+        {/* LEFT: FORM */}
+        <Box flex={2} width="100%">
           {/* SHIPPING */}
           <Typography variant="h5" fontWeight={600} mb={1}>
             Shipping Address
@@ -197,7 +204,9 @@ export default function CheckoutPage() {
               <Typography>{shippingInfo.country}</Typography>
               <Typography>Phone: {shippingInfo.phone}</Typography>
               <Stack direction="row" spacing={2} mt={2}>
-                <Button variant="contained" onClick={() => setEditingShipping(true)}>Edit</Button>
+                <Button variant="contained" onClick={() => setEditingShipping(true)}>
+                  Edit
+                </Button>
               </Stack>
             </Card>
           ) : (
@@ -227,7 +236,9 @@ export default function CheckoutPage() {
                     <Typography>{billingInfo.country}</Typography>
                     <Typography>Phone: {billingInfo.phone}</Typography>
                     <Stack direction="row" spacing={2} mt={2}>
-                      <Button variant="contained" onClick={() => setEditingBilling(true)}>Edit</Button>
+                      <Button variant="contained" onClick={() => setEditingBilling(true)}>
+                        Edit
+                      </Button>
                     </Stack>
                   </Box>
                 ) : (
@@ -238,14 +249,25 @@ export default function CheckoutPage() {
           )}
 
           {/* BUTTONS */}
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="flex-end" mt={3}>
-            <Button variant="outlined" onClick={handleSaveInfo}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            justifyContent="flex-end"
+            mt={3}
+            width="100%"
+          >
+            <Button variant="outlined" fullWidth={true} onClick={handleSaveInfo}>
               Save Info
             </Button>
-            <Button variant="contained" onClick={handlePlaceOrder}>
+            <Button variant="contained" fullWidth={true} onClick={handlePlaceOrder}>
               Place Order ${(totalPrice + 50).toFixed(2)}
             </Button>
           </Stack>
+        </Box>
+
+        {/* RIGHT: ORDER SUMMARY */}
+        <Box flex={1} width="100%">
+          {renderOrderSummary()}
         </Box>
       </Stack>
 
@@ -253,6 +275,7 @@ export default function CheckoutPage() {
         open={snackbar.open}
         autoHideDuration={3000}
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
