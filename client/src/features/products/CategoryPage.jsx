@@ -1,12 +1,11 @@
 import { useParams } from "react-router-dom";
-import { Box, Typography, CircularProgress, Alert, Container, useTheme } from "@mui/material";
+import { Box, Typography, CircularProgress, Alert, Container } from "@mui/material";
 import { useCategoryProducts } from "./hooks";
 import ProductGrid from "./ProductGrid";
 
 export default function CategoryPage() {
   const { name } = useParams();
   const { products, loading } = useCategoryProducts(name);
-  const theme = useTheme();
 
   if (loading)
     return (
@@ -14,8 +13,8 @@ export default function CategoryPage() {
         sx={{
           height: "60vh",
           display: "flex",
-          alignItems: "center",
           justifyContent: "center",
+          alignItems: "center",
         }}
       >
         <CircularProgress size={48} />
@@ -23,11 +22,11 @@ export default function CategoryPage() {
     );
 
   return (
-    <Container maxWidth="xl" sx={{ py: { xs: 3, md: 6 } }}>
+    <Container maxWidth="xl" sx={{ py: { xs: 4, md: 6 } }}>
       <Typography
         variant="h4"
-        fontWeight={600}
-        mb={3}
+        fontWeight={700}
+        mb={4}
         textAlign={{ xs: "center", md: "left" }}
       >
         {name} Products
@@ -40,7 +39,7 @@ export default function CategoryPage() {
           </Alert>
         </Box>
       ) : (
-        <ProductGrid products={products} />
+        <ProductGrid products={products} spacing={3} />
       )}
     </Container>
   );

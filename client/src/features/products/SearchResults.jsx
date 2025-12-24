@@ -1,51 +1,82 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Box, InputBase, IconButton, Paper } from "@mui/material";
+// src/shared/components/SearchBar.jsx
+import { useState, useEffect, useRef } from "react";
+import { Box, TextField, InputAdornment, IconButton } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Close";
+import { useNavigate } from "react-router-dom";
 
-export default function SearchBar({ fullWidth = false }) {
+export default function SearchBar({
+  fullWidth = false,
+  autoFocus = false,
+  onQueryChange,
+  initialValue = "",
+}) {
+  const [query, setQuery] = useState(initialValue);
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
+  const debounceRef = useRef(null);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
+  // Handle live search with debounce
+  useEffect(() => {
+    if (!onQueryChange) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(() => {
+      onQueryChange(query.trim());
+    }, 300);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [query, onQueryChange]);
+
+  const handleSearch = () => {
     const trimmed = query.trim();
-    if (trimmed) {
-      navigate(`/search?q=${encodeURIComponent(trimmed)}`);
-      setQuery("");
+    if (!trimmed) return;
+    navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+  };
+
+  const handleClear = () => setQuery("");
+
+  // handle Enter key manually
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSearch();
     }
   };
 
   return (
-    <Paper
-      component="form"
-      onSubmit={handleSearch}
-      sx={{
-        p: "2px 4px",
-        display: "flex",
-        alignItems: "center",
-        width: fullWidth ? "100%" : { xs: "100%", sm: 300 },
-        maxWidth: fullWidth ? "100%" : 300,
-        borderRadius: 2,
-        boxShadow: 1,
-        transition: "box-shadow 0.3s",
-        "&:hover": { boxShadow: 3 },
-      }}
+    <Box
+      component="div" // use div instead of form to avoid nested forms
+      sx={{ display: "flex", width: fullWidth ? "100%" : { xs: "100%", sm: 300 } }}
     >
-      <InputBase
-        sx={{ ml: 1, flex: 1 }}
-        placeholder="Search products..."
+      <TextField
+        size="small"
+        fullWidth
+        autoFocus={autoFocus}
+        placeholder="Search products…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        inputProps={{ "aria-label": "search products" }}
+        onKeyDown={handleKeyDown}
+        inputProps={{
+          "aria-label": "search products",
+          enterKeyHint: "search",
+        }}
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              {query && (
+                <IconButton onClick={handleClear} size="small" aria-label="clear search">
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              )}
+              <IconButton onClick={handleSearch} aria-label="search" edge="end">
+                <SearchIcon />
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
+        variant="outlined"
       />
-      <IconButton
-        type="submit"
-        sx={{ p: 1.5 }}
-        aria-label="search"
-      >
-        <SearchIcon />
-      </IconButton>
-    </Paper>
+    </Box>
   );
 }

@@ -1,6 +1,6 @@
 import { Box, Container, Snackbar, Alert } from "@mui/material";
 import { Helmet } from "react-helmet-async";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 import HeroBanner from "./HeroBanner";
@@ -30,6 +30,12 @@ export default function HomePage() {
     toggleWishlist,
   } = useECommerceData(user, navigate);
 
+  // Memoized callback for product click
+  const handleOpenProduct = useCallback(
+    (id) => navigate(`/product/${id}`),
+    [navigate]
+  );
+
   return (
     <Box
       sx={{
@@ -44,19 +50,18 @@ export default function HomePage() {
           name="description"
           content="Shop premium electronics, gadgets, and accessories at Zyntrica."
         />
+        <meta property="og:title" content="Zyntrica – Premium Electronics" />
+        <meta
+          property="og:description"
+          content="Shop premium electronics, gadgets, and accessories at Zyntrica."
+        />
       </Helmet>
 
-      {/* HERO */}
+      {/* HERO BANNER */}
       <HeroBanner />
 
       {/* MAIN CONTENT */}
-      <Container
-        maxWidth="xl"
-        sx={{
-          px: { xs: 1.5, sm: 2, md: 3 },
-          mt: { xs: 3, md: 5 },
-        }}
-      >
+      <Container maxWidth="xl" sx={{ px: { xs: 1.5, sm: 2, md: 3 }, mt: { xs: 3, md: 5 } }}>
         {/* CATEGORIES */}
         <Box sx={{ mb: { xs: 3, md: 5 } }}>
           <CategoryStrip categories={categories} loading={loading} />
@@ -71,7 +76,7 @@ export default function HomePage() {
           onAddToCart={addToCart}
           onUpdateQty={updateCartQuantity}
           onToggleWishlist={toggleWishlist}
-          onOpenProduct={(id) => navigate(`/product/${id}`)}
+          onOpenProduct={handleOpenProduct}
         />
       </Container>
 
@@ -80,13 +85,8 @@ export default function HomePage() {
         open={snackbar.open}
         autoHideDuration={3500}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
-        }}
-        sx={{
-          mb: { xs: 7, sm: 2 }, // avoids bottom nav overlap on mobile
-        }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        sx={{ mb: { xs: 7, sm: 2 } }}
       >
         <Alert
           severity={snackbar.severity}

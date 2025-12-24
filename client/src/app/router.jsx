@@ -7,7 +7,7 @@ import Signup from "../features/auth/Signup";
 
 import ProductsPage from "../features/products/ProductsPage";
 import CategoryPage from "../features/products/CategoryPage";
-import SearchResults from "../features/products/SearchResults";
+import SearchResults from "../features/products/SearchResultsLive";
 import ProductPage from "../features/products/ProductPage"; // updated path
 
 import WishlistPage from "../features/wishlist/WishlistPage";

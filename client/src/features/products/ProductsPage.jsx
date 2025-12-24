@@ -1,48 +1,69 @@
-import { useEffect, useState } from "react";
-import { Box, CircularProgress, Typography, Container, Button } from "@mui/material";
+import { useEffect, useState, useCallback, useRef } from "react";
+import {
+  Box,
+  Typography,
+  Container,
+  Button,
+} from "@mui/material";
+
+import Loader from "../../shared/components/Loader";
 import ProductGrid from "./ProductGrid";
 import { fetchProducts } from "./api";
 
 export default function ProductsPage() {
+  const mountedRef = useRef(true);
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
     try {
       const res = await fetchProducts();
-      setProducts(res || []);
-      setError(null);
+      if (mountedRef.current) {
+        setProducts(res || []);
+      }
     } catch (err) {
       console.error("Failed to load products:", err);
-      setError("Failed to load products. Please try again.");
+      if (mountedRef.current) {
+        setError("Failed to load products. Please try again.");
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadProducts();
-  }, []);
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [loadProducts]);
 
-  if (loading)
+  /* ---------------- States ---------------- */
+
+  if (loading) {
+    return <Loader message="Loading products..." />;
+  }
+
+  if (error) {
     return (
-      <Box
+      <Container
         sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "60vh",
+          py: { xs: 4, md: 6 },
+          textAlign: "center",
         }}
       >
-        <CircularProgress size={48} />
-      </Box>
-    );
-
-  if (error)
-    return (
-      <Container sx={{ py: { xs: 4, md: 6 }, textAlign: "center" }}>
-        <Typography variant="h6" color="error" mb={2}>
+        <Typography
+          variant="h6"
+          color="error"
+          mb={2}
+        >
           {error}
         </Typography>
         <Button variant="contained" onClick={loadProducts}>
@@ -50,9 +71,11 @@ export default function ProductsPage() {
         </Button>
       </Container>
     );
+  }
 
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 4, md: 6 } }}>
+      {/* Header */}
       <Typography
         variant="h4"
         fontWeight={700}
@@ -61,12 +84,16 @@ export default function ProductsPage() {
       >
         All Products
       </Typography>
-      {products.length ? (
+
+      {/* Content */}
+      {products.length > 0 ? (
         <ProductGrid products={products} />
       ) : (
-        <Typography variant="body1" textAlign="center">
-          No products available at the moment.
-        </Typography>
+        <Box textAlign="center" py={6}>
+          <Typography variant="body1" color="text.secondary">
+            No products available at the moment.
+          </Typography>
+        </Box>
       )}
     </Container>
   );

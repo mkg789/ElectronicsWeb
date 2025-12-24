@@ -5,121 +5,172 @@ import {
   Typography,
   Badge,
   Box,
-  Chip,
   Menu,
   MenuItem,
   InputBase,
+  Avatar,
+  useMediaQuery,
 } from "@mui/material";
-import { styled, alpha } from "@mui/material/styles";
+import { styled, alpha, useTheme } from "@mui/material/styles";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import { FiSearch } from "react-icons/fi";
+import SearchIcon from "@mui/icons-material/Search";
+import CloseIcon from "@mui/icons-material/Close";
 import { CgProfile } from "react-icons/cg";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useMemo, useState } from "react";
 
 import { useAuth } from "../../features/auth/AuthContext";
 import { useCartContext } from "../../features/cart/CartContext";
 
-// Styled Search Bar
+/* ---------------- Styled Search ---------------- */
+
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
   borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.action.active, 0.05),
+  backgroundColor: alpha(theme.palette.action.active, 0.06),
   "&:hover": {
-    backgroundColor: alpha(theme.palette.action.active, 0.1),
+    backgroundColor: alpha(theme.palette.action.active, 0.12),
   },
-  marginRight: theme.spacing(2),
-  marginLeft: 0,
   width: "100%",
-  [theme.breakpoints.up("sm")]: {
-    width: "auto",
-  },
 }));
 
 const SearchIconWrapper = styled("div")(({ theme }) => ({
-  padding: theme.spacing(0, 1),
-  height: "100%",
   position: "absolute",
+  left: theme.spacing(1),
+  height: "100%",
   display: "flex",
   alignItems: "center",
-  justifyContent: "center",
+  pointerEvents: "none",
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: "inherit",
-  paddingLeft: `calc(1em + ${theme.spacing(3)})`,
   width: "100%",
+  paddingLeft: theme.spacing(4),
 }));
+
+/* ---------------- Component ---------------- */
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   const { user, logout, isAuthenticated } = useAuth();
   const { cart } = useCartContext();
-  const cartCount = (cart || []).reduce((s, i) => s + (i.quantity || 0), 0);
+
   const [anchorEl, setAnchorEl] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+
+  const cartCount = useMemo(
+    () => (cart || []).reduce((sum, i) => sum + (i.quantity || 0), 0),
+    [cart]
+  );
+
+  const userInitial = user?.name?.charAt(0)?.toUpperCase() || "?";
+
+  const closeMenu = () => setAnchorEl(null);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) navigate(`/search?q=${searchQuery}`);
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) return;
+
+    // If already on /search, reload to fetch new results
+    if (location.pathname === "/search") {
+      navigate(`/search?q=${encodeURIComponent(trimmedQuery)}`, { replace: true });
+      window.location.reload();
+    } else {
+      navigate(`/search?q=${encodeURIComponent(trimmedQuery)}`);
+    }
+
+    setMobileSearchOpen(false);
   };
+
+  /* ---------------- Render ---------------- */
 
   return (
     <AppBar position="sticky" elevation={1} color="inherit">
-      <Toolbar sx={{ justifyContent: "space-between" }}>
-        <Typography
-          variant="h6"
-          fontWeight={800}
-          sx={{ cursor: "pointer" }}
-          onClick={() => navigate("/")}
-        >
-          Zyntrica
-        </Typography>
+      <Toolbar sx={{ gap: 1 }}>
+        {/* Logo */}
+        {!mobileSearchOpen && (
+          <Typography
+            variant="h6"
+            fontWeight={800}
+            sx={{ cursor: "pointer", flexShrink: 0 }}
+            onClick={() => navigate("/")}
+          >
+            Zyntrica
+          </Typography>
+        )}
 
-        {/* Search Bar */}
-        <Box component="form" onSubmit={handleSearch} sx={{ flexGrow: 1, mx: 2 }}>
-          <Search>
-            <SearchIconWrapper>
-              <FiSearch />
-            </SearchIconWrapper>
-            <StyledInputBase
-              placeholder="Search…"
-              inputProps={{ "aria-label": "search" }}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </Search>
-        </Box>
+        {/* Search */}
+        {(mobileSearchOpen || !isMobile) && (
+          <Box component="form" onSubmit={handleSearch} sx={{ flexGrow: 1, mx: 2 }}>
+            <Search>
+              <SearchIconWrapper>
+                <SearchIcon />
+              </SearchIconWrapper>
+              <StyledInputBase
+                autoFocus={isMobile}
+                placeholder="Search products…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </Search>
+          </Box>
+        )}
 
-        <Box sx={{ display: "flex", gap: 1 }}>
+        {/* Actions */}
+        <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
+          {/* Mobile Search Toggle */}
+          {isMobile && !mobileSearchOpen && (
+            <IconButton onClick={() => setMobileSearchOpen(true)}>
+              <SearchIcon />
+            </IconButton>
+          )}
+
+          {isMobile && mobileSearchOpen && (
+            <IconButton onClick={() => setMobileSearchOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          )}
+
+          {/* Cart */}
           <IconButton onClick={() => navigate("/cart")}>
             <Badge badgeContent={cartCount} color="error">
               <ShoppingCartIcon />
             </Badge>
           </IconButton>
 
+          {/* Profile */}
           <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-            {isAuthenticated ? <Chip label={user.name[0]} /> : <CgProfile size={24} />}
+            {isAuthenticated ? (
+              <Avatar sx={{ width: 32, height: 32 }}>{userInitial}</Avatar>
+            ) : (
+              <CgProfile size={24} />
+            )}
           </IconButton>
         </Box>
 
+        {/* Menu */}
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
-          onClose={() => setAnchorEl(null)}
+          onClose={closeMenu}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
         >
-          {!isAuthenticated && <MenuItem onClick={() => navigate("/login")}>Login</MenuItem>}
-          {isAuthenticated && [
-            <MenuItem key="orders" onClick={() => navigate("/orders")}>
-              Orders
-            </MenuItem>,
-            <MenuItem key="wishlist" onClick={() => navigate("/wishlist")}>
-              Wishlist
-            </MenuItem>,
-            <MenuItem key="logout" onClick={logout}>
-              Logout
-            </MenuItem>,
-          ]}
+          {!isAuthenticated ? (
+            <MenuItem onClick={() => navigate("/login")}>Login</MenuItem>
+          ) : (
+            <>
+              <MenuItem onClick={() => navigate("/orders")}>Orders</MenuItem>
+              <MenuItem onClick={() => navigate("/wishlist")}>Wishlist</MenuItem>
+              <MenuItem onClick={logout}>Logout</MenuItem>
+            </>
+          )}
         </Menu>
       </Toolbar>
     </AppBar>

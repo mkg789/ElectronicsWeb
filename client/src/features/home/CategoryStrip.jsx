@@ -7,11 +7,25 @@ export default function CategoryStrip({ categories, loading }) {
 
   return (
     <Box sx={{ px: { xs: 2, sm: 5 }, maxWidth: 1200, mx: "auto", mt: 5 }}>
-      <Typography variant="h5" fontWeight={700} mb={3}>
+      <Typography
+        variant="h5"
+        fontWeight={700}
+        mb={3}
+        textAlign={{ xs: "center", md: "left" }}
+      >
         Shop by Category
       </Typography>
 
-      <Stack direction="row" spacing={2} overflow="auto" pb={2}>
+      <Stack
+        direction="row"
+        spacing={2}
+        overflow="auto"
+        pb={2}
+        sx={{
+          "&::-webkit-scrollbar": { display: "none" }, // hide scrollbar on webkit
+          scrollbarWidth: "none", // hide scrollbar on Firefox
+        }}
+      >
         {loading
           ? Array.from({ length: 6 }).map((_, i) => (
               <Skeleton
@@ -19,7 +33,7 @@ export default function CategoryStrip({ categories, loading }) {
                 variant="rectangular"
                 width={140}
                 height={50}
-                sx={{ borderRadius: 3 }}
+                sx={{ borderRadius: 3, flexShrink: 0 }}
               />
             ))
           : categories.map((cat) => (
@@ -31,8 +45,10 @@ export default function CategoryStrip({ categories, loading }) {
                   py: 2,
                   borderRadius: 3,
                   minWidth: 140,
+                  flexShrink: 0,
                   textAlign: "center",
                   cursor: "pointer",
+                  transition: "transform 0.2s, box-shadow 0.2s, background-color 0.2s",
                   "&:hover": {
                     boxShadow: 6,
                     transform: "translateY(-3px)",
@@ -40,7 +56,9 @@ export default function CategoryStrip({ categories, loading }) {
                   },
                 }}
               >
-                <Typography fontWeight={600}>{cat}</Typography>
+                <Typography fontWeight={600} noWrap>
+                  {cat}
+                </Typography>
               </Paper>
             ))}
       </Stack>

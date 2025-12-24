@@ -1,5 +1,5 @@
 // src/features/wishlist/useWishlist.js
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -8,8 +8,11 @@ import {
   moveWishlistItemToCart,
 } from "./api";
 
+/* ---------------- Hook ---------------- */
+
 export default function useWishlist() {
   const navigate = useNavigate();
+  const mountedRef = useRef(true);
 
   const [user, setUser] = useState(null);
   const [wishlist, setWishlist] = useState([]);
@@ -21,80 +24,80 @@ export default function useWishlist() {
     severity: "success",
   });
 
-  /* ----------------------------------------
-     LOAD USER
-  ---------------------------------------- */
+  /* ---------------- Helpers ---------------- */
+
+  const showSnackbar = useCallback((message, severity = "success") => {
+    setSnackbar({ open: true, message, severity });
+  }, []);
+
+  /* ---------------- Lifecycle ---------------- */
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  /* ---------------- Load User ---------------- */
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem("user");
-      if (!saved) return navigate("/login");
+      if (!saved) {
+        navigate("/login");
+        return;
+      }
       setUser(JSON.parse(saved));
     } catch {
       navigate("/login");
     }
   }, [navigate]);
 
-  /* ----------------------------------------
-     LOAD WISHLIST
-  ---------------------------------------- */
-  useEffect(() => {
-    if (!user) return;
+  /* ---------------- Load Wishlist ---------------- */
 
+  const loadWishlist = useCallback(async () => {
     setLoading(true);
-    fetchWishlist()
-      .then(setWishlist)
-      .catch(() =>
-        setSnackbar({
-          open: true,
-          message: "Failed to load wishlist.",
-          severity: "error",
-        })
-      )
-      .finally(() => setLoading(false));
-  }, [user]);
+    try {
+      const data = await fetchWishlist();
+      if (mountedRef.current) setWishlist(data);
+    } catch {
+      showSnackbar("Failed to load wishlist.", "error");
+    } finally {
+      if (mountedRef.current) setLoading(false);
+    }
+  }, [showSnackbar]);
 
-  /* ----------------------------------------
-     ACTIONS
-  ---------------------------------------- */
-  const removeItem = async (productId) => {
+  useEffect(() => {
+    if (user) loadWishlist();
+  }, [user, loadWishlist]);
+
+  /* ---------------- Actions ---------------- */
+
+  const removeItem = useCallback(async (productId) => {
     try {
       await removeWishlistItem(productId);
-      setWishlist(prev =>
-        prev.filter(item => item.productId._id !== productId)
+      setWishlist((prev) =>
+        prev.filter((item) => item.productId._id !== productId)
       );
-      setSnackbar({
-        open: true,
-        message: "Item removed from wishlist.",
-        severity: "success",
-      });
+      showSnackbar("Item removed from wishlist.");
     } catch {
-      setSnackbar({
-        open: true,
-        message: "Failed to remove item.",
-        severity: "error",
-      });
+      showSnackbar("Failed to remove item.", "error");
     }
-  };
+  }, [showSnackbar]);
 
-  const moveToCart = async (productId) => {
+  const moveToCart = useCallback(async (productId) => {
     try {
       await moveWishlistItemToCart(productId);
-      setWishlist(prev =>
-        prev.filter(item => item.productId._id !== productId)
+      setWishlist((prev) =>
+        prev.filter((item) => item.productId._id !== productId)
       );
-      setSnackbar({
-        open: true,
-        message: "Product moved to cart 🛒",
-        severity: "success",
-      });
+      showSnackbar("Product moved to cart 🛒");
     } catch {
-      setSnackbar({
-        open: true,
-        message: "Failed to move item to cart.",
-        severity: "error",
-      });
+      showSnackbar("Failed to move item to cart.", "error");
     }
-  };
+  }, [showSnackbar]);
+
+  /* ---------------- Public API ---------------- */
 
   return {
     user,
@@ -103,9 +106,10 @@ export default function useWishlist() {
 
     removeItem,
     moveToCart,
+    refetch: loadWishlist,
 
     snackbar,
     closeSnackbar: () =>
-      setSnackbar(prev => ({ ...prev, open: false })),
+      setSnackbar((prev) => ({ ...prev, open: false })),
   };
 }

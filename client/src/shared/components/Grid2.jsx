@@ -1,13 +1,27 @@
 import { Box, useTheme } from "@mui/material";
 import PropTypes from "prop-types";
 
-// Convert 12-column value to percentage width
+/* ---------------- Utils ---------------- */
+
 function getWidth(val) {
-  if (val == null) return undefined;
+  if (val === true) return "100%";
+  if (val === "auto") return "auto";
+
   const v = Number(val);
-  if (Number.isNaN(v) || v <= 0) return undefined;
+  if (!Number.isFinite(v) || v <= 0) return undefined;
+
   return `${(v / 12) * 100}%`;
 }
+
+function buildResponsive(values) {
+  return Object.fromEntries(
+    Object.entries(values)
+      .map(([bp, val]) => [bp, getWidth(val)])
+      .filter(([, v]) => v != null)
+  );
+}
+
+/* ---------------- Component ---------------- */
 
 export default function Grid2({
   container = false,
@@ -18,21 +32,25 @@ export default function Grid2({
   justifyContent = "flex-start",
   alignItems = "stretch",
   children,
-  xs,
+  xs = 12,
   sm,
   md,
   lg,
-  sx = {},
+  sx,
   ...rest
 }) {
   const theme = useTheme();
+
+  /* ---------- Container ---------- */
 
   if (container) {
     const gapX = columnSpacing ?? spacing;
     const gapY = rowSpacing ?? spacing;
 
-    const gapXPx = typeof gapX === "number" ? theme.spacing(gapX) : gapX;
-    const gapYPx = typeof gapY === "number" ? theme.spacing(gapY) : gapY;
+    const gapXPx =
+      typeof gapX === "number" ? theme.spacing(gapX) : gapX;
+    const gapYPx =
+      typeof gapY === "number" ? theme.spacing(gapY) : gapY;
 
     return (
       <Box
@@ -41,9 +59,12 @@ export default function Grid2({
           flexWrap: wrap,
           justifyContent,
           alignItems,
-          margin: `-${gapYPx} 0 0 -${gapXPx}`,
+          marginLeft: `-${gapXPx}`,
+          marginTop: `-${gapYPx}`,
+          width: "100%",
           "& > *": {
-            padding: `${gapYPx} 0 0 ${gapXPx}`,
+            paddingLeft: gapXPx,
+            paddingTop: gapYPx,
           },
           ...sx,
         }}
@@ -54,31 +75,28 @@ export default function Grid2({
     );
   }
 
-  // Item
-  const sxResponsive = {
-    boxSizing: "border-box",
-    flexGrow: 0,
-    flexBasis: {
-      ...(xs ? { xs: getWidth(xs) } : {}),
-      ...(sm ? { sm: getWidth(sm) } : {}),
-      ...(md ? { md: getWidth(md) } : {}),
-      ...(lg ? { lg: getWidth(lg) } : {}),
-    },
-    maxWidth: {
-      ...(xs ? { xs: getWidth(xs) } : {}),
-      ...(sm ? { sm: getWidth(sm) } : {}),
-      ...(md ? { md: getWidth(md) } : {}),
-      ...(lg ? { lg: getWidth(lg) } : {}),
-    },
-    ...sx,
-  };
+  /* ---------- Item ---------- */
+
+  const responsiveWidth = buildResponsive({ xs, sm, md, lg });
 
   return (
-    <Box sx={sxResponsive} {...rest}>
+    <Box
+      sx={{
+        boxSizing: "border-box",
+        flexGrow: 0,
+        flexShrink: 0,
+        flexBasis: responsiveWidth,
+        maxWidth: responsiveWidth,
+        ...sx,
+      }}
+      {...rest}
+    >
       {children}
     </Box>
   );
 }
+
+/* ---------------- PropTypes ---------------- */
 
 Grid2.propTypes = {
   container: PropTypes.bool,
@@ -89,9 +107,9 @@ Grid2.propTypes = {
   justifyContent: PropTypes.string,
   alignItems: PropTypes.string,
   children: PropTypes.node,
-  xs: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  sm: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  md: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  lg: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  xs: PropTypes.oneOfType([PropTypes.number, PropTypes.string, PropTypes.bool]),
+  sm: PropTypes.oneOfType([PropTypes.number, PropTypes.string, PropTypes.bool]),
+  md: PropTypes.oneOfType([PropTypes.number, PropTypes.string, PropTypes.bool]),
+  lg: PropTypes.oneOfType([PropTypes.number, PropTypes.string, PropTypes.bool]),
   sx: PropTypes.object,
 };
