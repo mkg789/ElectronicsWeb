@@ -145,7 +145,7 @@ export default function Navbar() {
           </IconButton>
 
           {/* Profile */}
-          <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
+          <IconButton onClick={(e) => setAnchorEl((prev) => (prev ? null : e.currentTarget))}>
             {isAuthenticated ? (
               <Avatar sx={{ width: 32, height: 32 }}>{userInitial}</Avatar>
             ) : (
@@ -163,12 +163,12 @@ export default function Navbar() {
           transformOrigin={{ vertical: "top", horizontal: "right" }}
         >
           {!isAuthenticated ? (
-            <MenuItem onClick={() => navigate("/login")}>Login</MenuItem>
+            <MenuItem onClick={() => { closeMenu(); navigate("/login"); }}>Login</MenuItem>
           ) : (
             <>
-              <MenuItem onClick={() => navigate("/orders")}>Orders</MenuItem>
-              <MenuItem onClick={() => navigate("/wishlist")}>Wishlist</MenuItem>
-              <MenuItem onClick={logout}>Logout</MenuItem>
+              <MenuItem onClick={() => { closeMenu(); navigate("/orders"); }}>Orders</MenuItem>
+              <MenuItem onClick={() => { closeMenu(); navigate("/wishlist"); }}>Wishlist</MenuItem>
+              <MenuItem onClick={() => { closeMenu(); logout(); }}>Logout</MenuItem>
             </>
           )}
         </Menu>
