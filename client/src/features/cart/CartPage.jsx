@@ -102,20 +102,40 @@ export default function CartPage() {
                     bottom: 0,
                     left: 0,
                     width: "100%",
+                    boxSizing: "border-box",
                     bgcolor: "white",
-                    p: 2,
+                    px: 2,
+                    py: 1.5,
                     boxShadow: "0 -4px 20px rgba(0,0,0,0.1)",
                     borderTopLeftRadius: 12,
                     borderTopRightRadius: 12,
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    gap: 2,
                   }}
                 >
-                  <Typography fontWeight={600}>Total: ${cart.reduce((acc, i) => acc + i.productId.price * i.quantity, 0).toFixed(2)}</Typography>
+                  <Typography
+                    fontWeight={600}
+                    sx={{
+                      flex: 1,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Total: ${cart.reduce((acc, i) => acc + i.productId.price * i.quantity, 0).toFixed(2)}
+                  </Typography>
+
                   <Button
                     variant="contained"
                     onClick={() => navigate("/checkout")}
+                    sx={{
+                      ml: 1,
+                      minWidth: 110,
+                      flexShrink: 0,
+                      whiteSpace: "nowrap",
+                    }}
                   >
                     Checkout
                   </Button>
