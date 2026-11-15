@@ -56,14 +56,14 @@ export default function Login() {
 
   return (
     <Box
+      className="auth-page"
       display="flex"
       justifyContent="center"
       alignItems="center"
       minHeight="100vh"
-      bgcolor="#f5f7fa"
       px={2}
     >
-      <Card sx={{ maxWidth: 400, width: "100%", p: 3, boxShadow: 4 }}>
+      <Card className="auth-card" sx={{ maxWidth: 440 }}>
         <CardContent>
           <Typography variant="h4" fontWeight={600} textAlign="center" mb={2}>
             Welcome Back
@@ -107,7 +107,7 @@ export default function Login() {
           <Typography textAlign="center" mt={2}>
             New here?{" "}
             <span
-              style={{ color: "#1976d2", cursor: "pointer", fontWeight: 500 }}
+              className="auth-link"
               onClick={() => navigate("/signup")}
             >
               Sign Up

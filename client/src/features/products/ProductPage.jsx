@@ -1,163 +1,148 @@
-import { useParams, useNavigate } from "react-router-dom";
-import {
-  Box,
-  Container,
-  Typography,
-  Snackbar,
-  Alert,
-} from "@mui/material";
-import { useMemo, useState, useRef, useCallback, useEffect } from "react";
-
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, Box, Container, Snackbar, Typography } from "@mui/material";
+import { useNavigate, useParams } from "react-router-dom";
 import { useProduct } from "./hooks";
+import { fetchProducts } from "./api";
+import ProductGrid from "./ProductGrid";
 import ProductDetails from "./ProductDetails";
-import { useCartContext } from "../cart/CartContext";
 import Loader from "../../shared/components/Loader";
+import { useCartContext } from "../cart/CartContext";
+import { addToCart as addProductToCart } from "../cart/api";
+import { addWishlistItem, fetchWishlist } from "../wishlist/api";
 
 export default function ProductPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const mountedRef = useRef(true);
-
   const { product, loading } = useProduct(id);
-  const { cart, wishlist, addToCart, addToWishlist } = useCartContext();
-
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    msg: "",
-    type: "info",
-  });
+  const { cart, loadCart } = useCartContext();
+  const [quantity, setQuantity] = useState(1);
+  const [wishlistIds, setWishlistIds] = useState([]);
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [actionLoading, setActionLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
 
   const inCart = useMemo(
-    () => cart?.some(i => i.productId?._id === id),
+    () => cart?.some((item) => item.productId?._id === id),
     [cart, id]
   );
-
-  const inWishlist = useMemo(
-    () => wishlist?.some(i => i.productId?._id === id),
-    [wishlist, id]
-  );
+  const inWishlist = wishlistIds.includes(id);
 
   useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+    setQuantity(1);
+  }, [id]);
 
-  const showSnackbar = useCallback((msg, type = "info") => {
-    if (!mountedRef.current) return;
-    setSnackbar({ open: true, msg, type });
-  }, []);
+  useEffect(() => {
+    if (!product) return undefined;
+    let active = true;
+    fetchProducts()
+      .then((products) => {
+        if (active) {
+          setRelatedProducts(
+            (products || [])
+              .filter((item) => item._id !== product._id && item.category === product.category)
+              .slice(0, 4)
+          );
+        }
+      })
+      .catch((error) => console.error("Failed to load related products:", error));
+    return () => { active = false; };
+  }, [product]);
 
-  const requireAuth = useCallback(() => {
-    if (!localStorage.getItem("token")) {
-      navigate("/login");
-      return false;
-    }
-    return true;
+  useEffect(() => {
+    if (!product || !localStorage.getItem("token")) return undefined;
+    let active = true;
+    fetchWishlist()
+      .then((result) => {
+        const items = Array.isArray(result) ? result : result?.data || [];
+        if (active) setWishlistIds(items.map((item) => item.productId?._id).filter(Boolean));
+      })
+      .catch((error) => console.error("Failed to load wishlist:", error));
+    return () => { active = false; };
+  }, [product]);
+
+  const requireAuthentication = useCallback(() => {
+    if (localStorage.getItem("token")) return true;
+    navigate("/login");
+    return false;
   }, [navigate]);
 
-  const handleCart = useCallback(async () => {
-    if (!requireAuth()) return;
+  const handleAddToCart = useCallback(async () => {
+    if (!requireAuthentication()) return;
     setActionLoading(true);
     try {
-      await addToCart(product);
-      showSnackbar("Added to cart 🛒", "success");
-    } catch {
-      showSnackbar("Failed to add to cart.", "error");
+      for (let item = 0; item < quantity; item += 1) {
+        await addProductToCart(product._id);
+      }
+      await loadCart();
+      setSnackbar({ open: true, message: "Added to your shopping bag.", severity: "success" });
+    } catch (error) {
+      console.error("Failed to add product to cart:", error);
+      setSnackbar({ open: true, message: "Could not add this product to your bag.", severity: "error" });
     } finally {
-      if (mountedRef.current) setActionLoading(false);
+      setActionLoading(false);
     }
-  }, [product, addToCart, requireAuth, showSnackbar]);
+  }, [loadCart, product, quantity, requireAuthentication]);
 
-  const handleWishlist = useCallback(async () => {
-    if (!requireAuth()) return;
+  const handleAddToWishlist = useCallback(async () => {
+    if (!requireAuthentication()) return;
     setActionLoading(true);
     try {
-      await addToWishlist(product);
-      showSnackbar("Added to wishlist ❤️", "success");
-    } catch {
-      showSnackbar("Failed to add to wishlist.", "error");
+      await addWishlistItem(product._id);
+      setWishlistIds((current) => [...new Set([...current, product._id])]);
+      setSnackbar({ open: true, message: "Added to your wishlist.", severity: "success" });
+    } catch (error) {
+      console.error("Failed to update wishlist:", error);
+      setSnackbar({ open: true, message: "Could not update your wishlist.", severity: "error" });
     } finally {
-      if (mountedRef.current) setActionLoading(false);
+      setActionLoading(false);
     }
-  }, [product, addToWishlist, requireAuth, showSnackbar]);
+  }, [product, requireAuthentication]);
 
   if (loading) return <Loader fullPage message="Loading product..." />;
 
   if (!product) {
     return (
-      <Container
-        maxWidth="sm"
-        sx={{
-          py: 6,
-          textAlign: "center",
-        }}
-      >
-        <Typography variant="h6" color="error.main">
-          Product not found
-        </Typography>
+      <Container className="lux-page product-not-found" maxWidth="sm">
+        <Typography variant="h5">Product not found</Typography>
       </Container>
     );
   }
 
   return (
-    <Container
-      maxWidth="lg"
-      disableGutters
-      sx={{
-        px: { xs: 2, sm: 3 },
-        py: { xs: 2, md: 5 },
-      }}
-    >
-      {/* Product Title */}
-      <Typography
-        variant="h5"
-        fontWeight={600}
-        sx={{
-          mb: { xs: 2, md: 3 },
-          textAlign: { xs: "center", md: "left" },
-          wordBreak: "break-word",
-        }}
-      >
-        {product.name}
-      </Typography>
-
-      {/* Product Content */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          gap: { xs: 2, md: 3 },
-        }}
-      >
+    <Box className="lux-page product-page">
+      <Container maxWidth="lg" className="product-page-container">
         <ProductDetails
           product={product}
           inCart={inCart}
           inWishlist={inWishlist}
           loading={actionLoading}
-          onAddToCart={handleCart}
-          onAddToWishlist={handleWishlist}
+          quantity={quantity}
+          onQuantityChange={setQuantity}
+          onAddToCart={handleAddToCart}
+          onAddToWishlist={handleAddToWishlist}
         />
-      </Box>
-
-      {/* Snackbar */}
+        {relatedProducts.length > 0 && (
+          <section className="related-products">
+            <div className="lux-section-heading">
+              <div>
+                <span className="lux-eyebrow">Continue exploring</span>
+                <Typography component="h2" className="lux-heading">Related products</Typography>
+              </div>
+            </div>
+            <ProductGrid products={relatedProducts} />
+          </section>
+        )}
+      </Container>
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={2500}
+        autoHideDuration={3000}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        onClose={() =>
-          setSnackbar(prev => ({ ...prev, open: false }))
-        }
+        onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
       >
-        <Alert
-          severity={snackbar.type}
-          variant="filled"
-          sx={{ width: "100%" }}
-        >
-          {snackbar.msg}
+        <Alert severity={snackbar.severity} variant="filled" sx={{ width: "100%" }}>
+          {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </Box>
   );
 }

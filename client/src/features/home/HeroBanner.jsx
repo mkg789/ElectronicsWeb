@@ -1,4 +1,5 @@
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useNavigate } from "react-router-dom";
 
 export default function HeroBanner() {
@@ -6,69 +7,32 @@ export default function HeroBanner() {
 
   return (
     <Box
+      component="section"
+      className="lux-hero"
+      aria-labelledby="hero-title"
       sx={{
-        background: "linear-gradient(135deg, #004d99, #1976d2)",
-        color: "white",
-
-        // Mobile-first spacing
-        py: { xs: 5, sm: 8, md: 10 },
-        px: { xs: 2, sm: 4, md: 6 },
-
-        textAlign: "center",
-        borderRadius: { xs: "0 0 24px 24px", sm: "0 0 40px 40px" },
-        boxShadow: { xs: 3, sm: 6 },
-        mb: { xs: 3, md: 4 },
-
-        // Prevent overflow on small screens
-        overflow: "hidden",
+        backgroundImage:
+          "linear-gradient(90deg, rgba(8,8,8,.95) 0%, rgba(8,8,8,.78) 42%, rgba(8,8,8,.18) 100%), linear-gradient(0deg, rgba(8,8,8,.38), transparent 40%), url('https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=2200&q=85')",
       }}
     >
-      <Typography
-        variant="h4"
-        fontWeight={700}
-        mb={2}
-        sx={{
-          lineHeight: 1.2,
-        }}
-      >
-        Find Your Next Tech Obsession
-      </Typography>
-
-      <Typography
-        variant="body1"
-        sx={{
-          opacity: 0.9,
-          maxWidth: 520,
-          mx: "auto",
-          mb: { xs: 3, sm: 4 },
-          fontSize: { xs: "0.95rem", sm: "1rem" },
-        }}
-      >
-        Shop premium, verified electronics with free express shipping.
-      </Typography>
-
-      <Button
-        variant="contained"
-        fullWidth
-        size="large"
-        onClick={() => navigate("/products")}
-        sx={{
-          maxWidth: 320,
-          mx: "auto",
-          py: 1.4,
-          borderRadius: 3,
-          fontSize: { xs: "1rem", sm: "1.1rem" },
-          fontWeight: 600,
-          bgcolor: "white",
-          color: "primary.main",
-
-          "&:hover": {
-            bgcolor: "grey.100",
-          },
-        }}
-      >
-        Explore All Products
-      </Button>
+      <div className="lux-container hero-content lux-reveal">
+        <span className="lux-eyebrow">Technology, thoughtfully chosen</span>
+        <Typography id="hero-title" component="h1" className="hero-title">
+          Find Your Next<br />Tech Obsession
+        </Typography>
+        <Typography className="hero-description">
+          Discover the latest in technology, innovation and performance.
+        </Typography>
+        <Button
+          className="hero-cta"
+          variant="contained"
+          endIcon={<ArrowForwardIcon />}
+          onClick={() => navigate("/products")}
+        >
+          Explore all products
+        </Button>
+      </div>
+      <div className="hero-caption">Curated essentials for modern living</div>
     </Box>
   );
 }

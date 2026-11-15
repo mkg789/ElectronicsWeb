@@ -1,103 +1,90 @@
-import Grid from "../../shared/components/Grid2";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardMedia,
-  Typography,
-} from "@mui/material";
+import { Box, Button, CardMedia, IconButton, Typography } from "@mui/material";
 import { FaHeart } from "react-icons/fa";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
+import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 
 export default function ProductDetails({
   product,
   inCart,
   inWishlist,
   loading,
+  quantity,
+  onQuantityChange,
   onAddToCart,
   onAddToWishlist,
 }) {
+  const price = Number(product.price);
+
   return (
-    <Grid container spacing={4}>
-      {/* Product Image */}
-      <Grid xs={12} md={5}>
-        <Card sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div className="product-detail-layout">
+      <div className="product-gallery">
+        <div className="product-gallery-main">
           <CardMedia
             component="img"
             image={product.imageUrl || "/placeholder.svg"}
             alt={product.name}
-            onError={(e) => { e.target.onerror = null; e.target.src = "/placeholder.svg"; }}
-            sx={{
-              width: "100%",
-              maxHeight: { xs: 300, md: 400 },
-              objectFit: "contain",
-            }}
+            onError={(event) => { event.currentTarget.src = "/placeholder.svg"; }}
           />
-        </Card>
-      </Grid>
+        </div>
+      </div>
 
-      {/* Product Info */}
-      <Grid xs={12} md={7}>
-        <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-          <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-            <Typography variant="h5" fontWeight={700} mb={2}>
-              {product.name}
-            </Typography>
+      <Box className="product-detail-info">
+        <span className="lux-eyebrow">{product.category || "Electronics"}</span>
+        <Typography component="h1" className="product-detail-title">{product.name}</Typography>
+        <Typography className="product-detail-price">
+          {Number.isFinite(price) ? `$${price.toFixed(2)}` : "Price unavailable"}
+        </Typography>
+        <div className="detail-rule" />
+        <Typography className="detail-label">Product details</Typography>
+        <Typography className="product-description">
+          {product.description || "Product details have not been provided."}
+        </Typography>
 
-            <Typography variant="h6" mb={1}>
-              <strong>Price:</strong> ${product.price.toFixed(2)}
-            </Typography>
+        <div className="product-specifications">
+          <Typography className="detail-label">Specifications</Typography>
+          <div className="product-spec-row">
+            <span>Category</span>
+            <strong>{product.category || "Not specified"}</strong>
+          </div>
+        </div>
 
-            <Typography variant="body1" mb={2}>
-              <strong>Category:</strong> {product.category || "N/A"}
-            </Typography>
-
-            <Typography variant="subtitle1" fontWeight="bold" mb={1}>
-              Description:
-            </Typography>
-            <Box
-              sx={{
-                color: "text.secondary",
-                mb: 3,
-                maxHeight: 200,
-                overflowY: "auto",
-              }}
+        <div className="detail-quantity-row">
+          <span className="detail-label">Quantity</span>
+          <div className="detail-quantity-control">
+            <IconButton
+              onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+              aria-label="Decrease quantity"
+              disabled={quantity <= 1}
             >
-              {product.description || "No description available."}
-            </Box>
+              <RemoveIcon fontSize="small" />
+            </IconButton>
+            <span aria-live="polite">{quantity}</span>
+            <IconButton onClick={() => onQuantityChange(quantity + 1)} aria-label="Increase quantity">
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </div>
+        </div>
 
-            {/* Action Buttons */}
-            <Box
-              display="flex"
-              flexDirection={{ xs: "column", sm: "row" }}
-              gap={2}
-              mt="auto"
-            >
-              <Button
-                variant="contained"
-                fullWidth
-                disabled={inCart || loading}
-                onClick={onAddToCart}
-                sx={{ py: 1.5 }}
-              >
-                {inCart ? "In Cart 🛒" : "Add to Cart"}
-              </Button>
-
-              <Button
-                variant="outlined"
-                color="error"
-                fullWidth
-                startIcon={<FaHeart />}
-                disabled={inWishlist || loading}
-                onClick={onAddToWishlist}
-                sx={{ py: 1.5 }}
-              >
-                {inWishlist ? "In Wishlist ❤️" : "Wishlist"}
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
-      </Grid>
-    </Grid>
+        <div className="product-detail-actions">
+          <Button
+            variant="contained"
+            startIcon={<ShoppingBagOutlinedIcon />}
+            disabled={loading}
+            onClick={onAddToCart}
+          >
+            {inCart ? "Add more to bag" : "Add to bag"}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<FaHeart />}
+            disabled={loading || inWishlist}
+            onClick={onAddToWishlist}
+          >
+            {inWishlist ? "Saved to wishlist" : "Add to wishlist"}
+          </Button>
+        </div>
+      </Box>
+    </div>
   );
 }
