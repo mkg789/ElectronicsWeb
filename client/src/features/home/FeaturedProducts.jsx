@@ -1,18 +1,17 @@
 import Grid from "../../shared/components/Grid2";
 import {
-  Card,
-  CardMedia,
-  CardContent,
-  Typography,
-  IconButton,
-  Button,
   Box,
-  Stack,
+  Button,
+  Card,
+  CardContent,
+  CardMedia,
+  IconButton,
   Skeleton,
-  useMediaQuery,
-  useTheme,
+  Stack,
+  Typography,
 } from "@mui/material";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import { Link } from "react-router-dom";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import RemoveIcon from "@mui/icons-material/Remove";
@@ -28,143 +27,92 @@ export default function FeaturedProducts({
   onToggleWishlist,
   onOpenProduct,
 }) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  const renderCartControls = (item) => {
-    const cartItem = cart.find((c) => c.productId._id === item._id);
-
-    if (!cartItem) {
-      return (
-        <Button
-          size="small"
-          fullWidth
-          variant="contained"
-          startIcon={<ShoppingCartIcon />}
-          onClick={() => onAddToCart(item._id)}
-          sx={{ borderRadius: 2, mb: 1 }}
-        >
-          Add to Cart
-        </Button>
-      );
-    }
-
-    return (
-      <Stack
-        direction={isMobile ? "column" : "row"}
-        spacing={1}
-        justifyContent="center"
-        alignItems="center"
-        mb={1}
-      >
-        <IconButton
-          size="small"
-          onClick={() => onUpdateQty(item._id, "remove")}
-        >
-          <RemoveIcon fontSize={isMobile ? "small" : "medium"} />
-        </IconButton>
-
-        <Typography fontWeight={700}>{cartItem.quantity}</Typography>
-
-        <IconButton
-          size="small"
-          onClick={() => onUpdateQty(item._id, "add")}
-        >
-          <AddIcon fontSize={isMobile ? "small" : "medium"} />
-        </IconButton>
-      </Stack>
-    );
-  };
-
   return (
-    <Box sx={{ px: { xs: 2, sm: 3 }, maxWidth: 1200, mx: "auto", mt: 6, pb: 8 }}>
-      <Typography
-        variant="h5"
-        fontWeight={700}
-        mb={3}
-        textAlign={{ xs: "center", md: "left" }}
-      >
-        Featured Products
-      </Typography>
+    <Box component="section" className="lux-section featured-section">
+      <div className="lux-container">
+        <div className="lux-section-heading">
+          <div>
+            <span className="lux-eyebrow">Selected for you</span>
+            <Typography component="h2" className="lux-heading">Featured products</Typography>
+          </div>
+          <Link className="lux-link" to="/products">View the collection&nbsp; →</Link>
+        </div>
 
-      <Grid container spacing={2}>
-        {(loading ? Array.from({ length: 8 }) : products).map((item, i) => {
-          if (loading) {
+        <Grid container spacing={2}>
+          {(loading ? Array.from({ length: 8 }) : products).map((item, index) => {
+            if (loading) {
+              return (
+                <Grid xs={6} sm={4} md={3} key={`loading-${index}`}>
+                  <Skeleton variant="rounded" className="product-card-skeleton" />
+                </Grid>
+              );
+            }
+
+            const cartItem = cart.find((entry) => entry.productId?._id === item._id);
+            const isWished = wishlist.some((entry) => entry.productId?._id === item._id);
+            const price = Number(item.price);
+
             return (
-              <Grid xs={6} sm={4} md={3} key={i}>
-                <Skeleton
-                  variant="rectangular"
-                  sx={{ borderRadius: 4, height: { xs: 180, sm: 220, md: 280 } }}
-                />
-              </Grid>
-            );
-          }
-
-          const isWished = wishlist.some((w) => w.productId._id === item._id);
-
-          const handleOpen = () => onOpenProduct(item._id);
-
-          return (
-            <Grid xs={6} sm={4} md={3} key={item._id}>
-              <Card
-                sx={{
-                  borderRadius: 4,
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  height={isMobile ? 150 : 180}
-                  image={item.imageUrl || "/placeholder.svg"}
-                  onClick={handleOpen}
-                  sx={{ cursor: "pointer", objectFit: "cover" }}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = "/placeholder.svg";
-                  }}
-                />
-
-                <CardContent
-                  sx={{
-                    flexGrow: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Box>
-                    <Typography fontWeight={600} noWrap mb={0.5}>
+              <Grid xs={6} sm={4} md={3} key={item._id}>
+                <Card className="lux-product-card">
+                  <div className="product-image-wrap" onClick={() => onOpenProduct(item._id)}>
+                    <span className="product-badge">Featured</span>
+                    <IconButton
+                      className={`product-favorite${isWished ? " is-active" : ""}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onToggleWishlist(item);
+                      }}
+                      aria-label={isWished ? "Remove from wishlist" : "Add to wishlist"}
+                    >
+                      {isWished ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
+                    </IconButton>
+                    <CardMedia
+                      component="img"
+                      image={item.imageUrl || "/placeholder.svg"}
+                      alt={item.name}
+                      loading="lazy"
+                      onError={(event) => { event.currentTarget.src = "/placeholder.svg"; }}
+                    />
+                  </div>
+                  <CardContent className="lux-product-content">
+                    <Typography className="product-category" variant="caption">
+                      {item.category || "Electronics"}
+                    </Typography>
+                    <Typography
+                      className="product-name"
+                      onClick={() => onOpenProduct(item._id)}
+                      title={item.name}
+                    >
                       {item.name}
                     </Typography>
-                    <Typography fontWeight={700} color="primary" mb={1}>
-                      ${item.price.toFixed(2)}
+                    <Typography className="product-price">
+                      {Number.isFinite(price) ? `$${price.toFixed(2)}` : "—"}
                     </Typography>
-                  </Box>
-
-                  {renderCartControls(item)}
-
-                  <IconButton
-                    color="error"
-                    onClick={() => onToggleWishlist(item)}
-                    sx={{
-                      width: "100%",
-                      border: "1px solid #ccc",
-                      justifyContent: "center",
-                      py: 1,
-                      mt: isMobile ? 1 : 0,
-                    }}
-                  >
-                    {isWished ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-                  </IconButton>
-                </CardContent>
-              </Card>
-            </Grid>
-          );
-        })}
-      </Grid>
+                    {cartItem ? (
+                      <Stack className="cart-quantity-control" direction="row" alignItems="center" justifyContent="space-between">
+                        <IconButton aria-label="Remove one" onClick={() => onUpdateQty(item._id, "remove")}><RemoveIcon fontSize="small" /></IconButton>
+                        <Typography>{cartItem.quantity}</Typography>
+                        <IconButton aria-label="Add one" onClick={() => onUpdateQty(item._id, "add")}><AddIcon fontSize="small" /></IconButton>
+                      </Stack>
+                    ) : (
+                      <Button
+                        className="product-add-button"
+                        fullWidth
+                        variant="outlined"
+                        startIcon={<ShoppingCartOutlinedIcon />}
+                        onClick={() => onAddToCart(item._id)}
+                      >
+                        Add to bag
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
+      </div>
     </Box>
   );
 }

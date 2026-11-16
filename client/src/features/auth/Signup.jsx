@@ -66,14 +66,14 @@ export default function Signup() {
 
   return (
     <Box
+      className="auth-page"
       minHeight="100vh"
       display="flex"
       alignItems="center"
       justifyContent="center"
-      bgcolor="#f5f7fa"
       px={2}
     >
-      <Card sx={{ width: 400, p: 2, boxShadow: 4 }}>
+      <Card className="auth-card" sx={{ width: "100%", maxWidth: 440 }}>
         <CardContent>
           <Typography variant="h5" fontWeight={600} textAlign="center" mb={2}>
             Create Account

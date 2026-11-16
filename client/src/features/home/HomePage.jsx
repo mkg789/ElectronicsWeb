@@ -1,4 +1,4 @@
-import { Box, Container, Snackbar, Alert } from "@mui/material";
+import { Box, Snackbar, Alert, Typography } from "@mui/material";
 import { Helmet } from "react-helmet-async";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import HeroBanner from "./HeroBanner";
 import CategoryStrip from "./CategoryStrip";
 import FeaturedProducts from "./FeaturedProducts";
 import useECommerceData from "./useECommerceData";
+import { getProductBrand } from "../products/productUtils";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -34,16 +35,10 @@ export default function HomePage() {
     (id) => navigate(`/product/${id}`),
     [navigate]
   );
+  const brands = [...new Set(products.map(getProductBrand).filter(Boolean))];
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        bgcolor: "#f5f7fa",
-        pb: { xs: 6, md: 8 },
-        overflowX: "hidden", // prevents mobile horizontal scroll
-      }}
-    >
+    <Box className="lux-page home-page">
       <Helmet>
         <title>Zyntrica – Premium Electronics</title>
         <meta
@@ -60,35 +55,48 @@ export default function HomePage() {
       {/* HERO BANNER */}
       <HeroBanner />
 
-      {/* MAIN CONTENT */}
-      <Container
-        maxWidth="lg"
-        disableGutters
-        sx={{
-          px: { xs: 1.5, sm: 2, md: 3 },
-          mt: { xs: 3, md: 5 },
-        }}
-      >
-        {/* CATEGORIES */}
-        <Box sx={{ mb: { xs: 3, md: 5 } }}>
-          <CategoryStrip
-            categories={categories}
-            loading={loading}
-          />
-        </Box>
+      <CategoryStrip categories={categories} loading={loading} />
 
-        {/* FEATURED PRODUCTS */}
-        <FeaturedProducts
-          products={products}
-          cart={cart}
-          wishlist={wishlist}
-          loading={loading}
-          onAddToCart={addToCart}
-          onUpdateQty={updateCartQuantity}
-          onToggleWishlist={toggleWishlist}
-          onOpenProduct={handleOpenProduct}
-        />
-      </Container>
+      <FeaturedProducts
+        products={products.slice(0, 8)}
+        cart={cart}
+        wishlist={wishlist}
+        loading={loading}
+        onAddToCart={addToCart}
+        onUpdateQty={updateCartQuantity}
+        onToggleWishlist={toggleWishlist}
+        onOpenProduct={handleOpenProduct}
+      />
+
+      <Box component="section" className="lux-section brand-section" id="brands">
+        <div className="lux-container">
+          <div className="lux-section-heading">
+            <div>
+              <span className="lux-eyebrow">The names behind the technology</span>
+              <Typography component="h2" className="lux-heading">Shop by brand</Typography>
+            </div>
+          </div>
+          {brands.length > 0 ? (
+            <div className="brand-list">
+              {brands.map((brand) => (
+                <button
+                  type="button"
+                  className="brand-tile"
+                  key={brand}
+                  onClick={() => navigate(`/products?brand=${encodeURIComponent(brand)}`)}
+                >
+                  {brand}
+                  <span>Explore products&nbsp; →</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <Typography className="brand-data-note" color="text.secondary">
+              Brand details will appear here when included in the product catalog.
+            </Typography>
+          )}
+        </div>
+      </Box>
 
       {/* SNACKBAR */}
       <Snackbar

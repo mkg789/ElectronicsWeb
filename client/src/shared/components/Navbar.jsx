@@ -1,178 +1,161 @@
+import { useMemo, useState } from "react";
 import {
   AppBar,
-  Toolbar,
-  IconButton,
-  Typography,
+  Avatar,
   Badge,
   Box,
+  IconButton,
+  InputBase,
   Menu,
   MenuItem,
-  InputBase,
-  Avatar,
-  useMediaQuery,
+  Toolbar,
 } from "@mui/material";
-import { styled, alpha, useTheme } from "@mui/material/styles";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import SearchIcon from "@mui/icons-material/Search";
+import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
+import SearchIcon from "@mui/icons-material/Search";
+import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import { CgProfile } from "react-icons/cg";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useMemo, useState } from "react";
-
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useCartContext } from "../../features/cart/CartContext";
 
-/* ---------------- Styled Search ---------------- */
-
-const Search = styled("div")(({ theme }) => ({
-  position: "relative",
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.action.active, 0.06),
-  "&:hover": {
-    backgroundColor: alpha(theme.palette.action.active, 0.12),
-  },
-  width: "100%",
-}));
-
-const SearchIconWrapper = styled("div")(({ theme }) => ({
-  position: "absolute",
-  left: theme.spacing(1),
-  height: "100%",
-  display: "flex",
-  alignItems: "center",
-  pointerEvents: "none",
-}));
-
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  width: "100%",
-  paddingLeft: theme.spacing(4),
-}));
-
-/* ---------------- Component ---------------- */
+const links = [
+  { label: "Home", to: "/" },
+  { label: "Products", to: "/products" },
+  { label: "Brands", to: "/#brands" },
+  { label: "Categories", to: "/#categories" },
+  { label: "About Us", to: "/#about" },
+];
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
   const { user, logout, isAuthenticated } = useAuth();
   const { cart } = useCartContext();
-
-  const [anchorEl, setAnchorEl] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountAnchor, setAccountAnchor] = useState(null);
 
   const cartCount = useMemo(
-    () => (cart || []).reduce((sum, i) => sum + (i.quantity || 0), 0),
+    () => (cart || []).reduce((sum, item) => sum + (item.quantity || 0), 0),
     [cart]
   );
+  const userInitial = user?.name?.charAt(0)?.toUpperCase() || "U";
 
-  const userInitial = user?.name?.charAt(0)?.toUpperCase() || "?";
-
-  const closeMenu = () => setAnchorEl(null);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    const trimmedQuery = searchQuery.trim();
-    if (!trimmedQuery) return;
-
-    // If already on /search, reload to fetch new results
-    if (location.pathname === "/search") {
-      navigate(`/search?q=${encodeURIComponent(trimmedQuery)}`, { replace: true });
-      window.location.reload();
-    } else {
-      navigate(`/search?q=${encodeURIComponent(trimmedQuery)}`);
-    }
-
-    setMobileSearchOpen(false);
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) return;
+    navigate(`/search?q=${encodeURIComponent(query)}`);
+    setSearchOpen(false);
+    setMobileMenuOpen(false);
   };
 
-  /* ---------------- Render ---------------- */
+  const navigateTo = (to) => {
+    setMobileMenuOpen(false);
+    if (to.startsWith("/#") && location.pathname === "/") {
+      document.querySelector(to.slice(1))?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    navigate(to);
+  };
 
   return (
-    <AppBar position="sticky" elevation={1} color="inherit">
-      <Toolbar sx={{ gap: 1 }}>
-        {/* Logo */}
-        {!mobileSearchOpen && (
-          <Typography
-            variant="h6"
-            fontWeight={800}
-            sx={{ cursor: "pointer", flexShrink: 0 }}
-            onClick={() => navigate("/")}
-          >
-            Zyntrica
-          </Typography>
-        )}
+    <AppBar
+      position="sticky"
+      elevation={0}
+      className="site-header"
+      sx={{
+        bgcolor: "rgba(8, 8, 8, 0.94)",
+        borderBottom: "1px solid rgba(214, 181, 109, 0.14)",
+        backdropFilter: "blur(18px)",
+      }}
+    >
+      <Toolbar className="site-toolbar" disableGutters>
+        <Box className="site-header-inner">
+          <Link className="brand-mark" to="/" aria-label="Zyntrica home">
+            <span className="brand-mark-symbol">Z</span>
+            <span>Zyntrica</span>
+          </Link>
 
-        {/* Search */}
-        {(mobileSearchOpen || !isMobile) && (
-          <Box component="form" onSubmit={handleSearch} sx={{ flexGrow: 1, mx: 2 }}>
-            <Search>
-              <SearchIconWrapper>
-                <SearchIcon />
-              </SearchIconWrapper>
-              <StyledInputBase
-                autoFocus={isMobile}
-                placeholder="Search products…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </Search>
+          <Box component="nav" className={`primary-nav${mobileMenuOpen ? " is-open" : ""}`} aria-label="Main navigation">
+            {links.map(({ label, to }) => (
+              <button
+                type="button"
+                key={label}
+                className={`nav-link${location.pathname === to ? " active" : ""}`}
+                onClick={() => navigateTo(to)}
+              >
+                {label}
+              </button>
+            ))}
           </Box>
-        )}
 
-        {/* Actions */}
-        <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
-          {/* Mobile Search Toggle */}
-          {isMobile && !mobileSearchOpen && (
-            <IconButton onClick={() => setMobileSearchOpen(true)}>
-              <SearchIcon />
-            </IconButton>
-          )}
-
-          {isMobile && mobileSearchOpen && (
-            <IconButton onClick={() => setMobileSearchOpen(false)}>
-              <CloseIcon />
-            </IconButton>
-          )}
-
-          {/* Cart */}
-          <IconButton onClick={() => navigate("/cart")}>
-            <Badge badgeContent={cartCount} color="error">
-              <ShoppingCartIcon />
-            </Badge>
-          </IconButton>
-
-          {/* Profile */}
-          <IconButton onClick={(e) => setAnchorEl((prev) => (prev ? null : e.currentTarget))}>
-            {isAuthenticated ? (
-              <Avatar sx={{ width: 32, height: 32 }}>{userInitial}</Avatar>
+          <Box className="header-actions">
+            {searchOpen ? (
+              <Box component="form" className="header-search" onSubmit={handleSearch}>
+                <SearchIcon fontSize="small" />
+                <InputBase
+                  autoFocus
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search the collection"
+                  inputProps={{ "aria-label": "Search products" }}
+                />
+                <IconButton size="small" onClick={() => setSearchOpen(false)} aria-label="Close search">
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Box>
             ) : (
-              <CgProfile size={24} />
+              <IconButton className="header-icon" onClick={() => setSearchOpen(true)} aria-label="Search">
+                <SearchIcon />
+              </IconButton>
             )}
-          </IconButton>
+            <IconButton className="header-icon" onClick={() => navigate("/cart")} aria-label={`Shopping bag, ${cartCount} items`}>
+              <Badge badgeContent={cartCount} color="primary" max={99}>
+                <ShoppingBagOutlinedIcon />
+              </Badge>
+            </IconButton>
+            <IconButton
+              className="header-icon account-trigger"
+              onClick={(event) => setAccountAnchor(event.currentTarget)}
+              aria-label="Account menu"
+            >
+              {isAuthenticated ? <Avatar className="account-avatar">{userInitial}</Avatar> : <CgProfile size={22} />}
+            </IconButton>
+            <IconButton
+              className="header-icon mobile-menu-toggle"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+            </IconButton>
+          </Box>
         </Box>
-
-        {/* Menu */}
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={closeMenu}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          transformOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          {!isAuthenticated ? (
-            <MenuItem onClick={() => { closeMenu(); navigate("/login"); }}>Login</MenuItem>
-          ) : (
-            <>
-              <MenuItem onClick={() => { closeMenu(); navigate("/orders"); }}>Orders</MenuItem>
-              <MenuItem onClick={() => { closeMenu(); navigate("/wishlist"); }}>Wishlist</MenuItem>
-              <MenuItem onClick={() => { closeMenu(); logout(); }}>Logout</MenuItem>
-            </>
-          )}
-        </Menu>
       </Toolbar>
+
+      <Menu
+        anchorEl={accountAnchor}
+        open={Boolean(accountAnchor)}
+        onClose={() => setAccountAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        {!isAuthenticated ? (
+          <>
+            <MenuItem onClick={() => { setAccountAnchor(null); navigate("/login"); }}>Sign in</MenuItem>
+            <MenuItem onClick={() => { setAccountAnchor(null); navigate("/signup"); }}>Create account</MenuItem>
+          </>
+        ) : (
+          <>
+            <MenuItem onClick={() => { setAccountAnchor(null); navigate("/orders"); }}>Orders</MenuItem>
+            <MenuItem onClick={() => { setAccountAnchor(null); navigate("/wishlist"); }}>Wishlist</MenuItem>
+            <MenuItem onClick={() => { setAccountAnchor(null); logout(); }}>Sign out</MenuItem>
+          </>
+        )}
+      </Menu>
     </AppBar>
   );
 }

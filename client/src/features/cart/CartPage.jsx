@@ -39,7 +39,7 @@ export default function CartPage() {
     );
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#F0F2F5", pb: { xs: 12, md: 6 } }}>
+    <Box className="cart-page" sx={{ minHeight: "100vh", pb: { xs: 12, md: 6 } }}>
       <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, md: 3 }, pt: { xs: 4, md: 6 } }}>
         <Typography
           variant="h3"
@@ -54,8 +54,8 @@ export default function CartPage() {
           <Box
             textAlign="center"
             py={10}
+            className="cart-empty"
             sx={{
-              bgcolor: "white",
               borderRadius: 4,
               boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
             }}
@@ -97,13 +97,13 @@ export default function CartPage() {
 
                 {/* Sticky Checkout */}
                 <Box
+                  className="cart-mobile-checkout"
                   sx={{
                     position: "fixed",
                     bottom: 0,
                     left: 0,
                     width: "100%",
                     boxSizing: "border-box",
-                    bgcolor: "white",
                     px: 2,
                     py: 1.5,
                     boxShadow: "0 -4px 20px rgba(0,0,0,0.1)",

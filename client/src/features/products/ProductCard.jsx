@@ -1,110 +1,87 @@
-import {
-  Card,
-  CardMedia,
-  CardContent,
-  Typography,
-  Button,
-  Box,
-} from "@mui/material";
+import { useMemo } from "react";
+import { Box, Button, Card, CardContent, CardMedia, IconButton, Stack, Typography } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
+import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { useNavigate } from "react-router-dom";
+import { useCartContext } from "../cart/CartContext";
 
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
+  const { cart, increaseQty, decreaseQty, isUpdating } = useCartContext();
+  const cartItem = useMemo(
+    () => cart?.find((item) => item.productId?._id === product._id),
+    [cart, product._id]
+  );
+  const price = Number(product.price);
 
-  const handleNavigate = () => navigate(`/product/${product._id}`);
+  const addToCart = () => {
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
+      return;
+    }
+    increaseQty(product._id);
+  };
 
   return (
-    <Card
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        borderRadius: 2,
-        boxShadow: { xs: 2, md: 3 },
-        transition: "transform 0.2s ease, box-shadow 0.2s ease",
-
-        // Disable hover lift on touch devices
-        "@media (hover: hover)": {
-          "&:hover": {
-            transform: "translateY(-4px)",
-            boxShadow: 6,
-          },
-        },
-      }}
-    >
-      {/* Image */}
+    <Card className="lux-product-card">
       <Box
-        onClick={handleNavigate}
-        sx={{
-          cursor: "pointer",
-          p: 1,
+        className="product-image-wrap"
+        role="link"
+        tabIndex={0}
+        aria-label={`View ${product.name}`}
+        onClick={() => navigate(`/product/${product._id}`)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") navigate(`/product/${product._id}`);
         }}
       >
         <CardMedia
           component="img"
           image={product.imageUrl || "/placeholder.svg"}
           alt={product.name}
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = "/placeholder.svg";
-          }}
-          sx={{
-            width: "100%",
-            height: { xs: 160, sm: 180, md: 200 },
-            objectFit: "contain",
-            borderRadius: 1,
-            bgcolor: "#f9f9f9",
-          }}
+          loading="lazy"
+          onError={(event) => { event.currentTarget.src = "/placeholder.svg"; }}
         />
       </Box>
-
-      {/* Content */}
-      <CardContent
-        sx={{
-          flexGrow: 1,
-          display: "flex",
-          flexDirection: "column",
-          px: { xs: 1.5, sm: 2 },
-        }}
-      >
-        <Typography
-          variant="subtitle1"
-          fontWeight={600}
-          gutterBottom
-          onClick={handleNavigate}
-          sx={{
-            cursor: "pointer",
-            lineHeight: 1.3,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-          }}
-        >
+      <CardContent className="lux-product-content">
+        <Typography className="product-category" variant="caption">
+          {product.category || "Electronics"}
+        </Typography>
+        <Typography className="product-name" component="h3" title={product.name}>
           {product.name}
         </Typography>
-
-        <Typography
-          color="primary"
-          fontWeight={700}
-          mb={2}
-        >
-          ${product.price}
+        <Typography className="product-price">
+          {Number.isFinite(price) ? `$${price.toFixed(2)}` : "—"}
         </Typography>
-
-        <Button
-          variant="contained"
-          size="large"
-          fullWidth
-          onClick={handleNavigate}
-          sx={{
-            mt: "auto",
-            borderRadius: 1.5,
-          }}
-        >
-          View
-        </Button>
+        {cartItem ? (
+          <Stack className="cart-quantity-control" direction="row" alignItems="center" justifyContent="space-between">
+            <IconButton
+              aria-label={`Remove one ${product.name}`}
+              disabled={Boolean(isUpdating?.[product._id])}
+              onClick={() => decreaseQty(product._id)}
+            >
+              <RemoveIcon fontSize="small" />
+            </IconButton>
+            <Typography aria-live="polite">{cartItem.quantity}</Typography>
+            <IconButton
+              aria-label={`Add one ${product.name}`}
+              disabled={Boolean(isUpdating?.[product._id])}
+              onClick={addToCart}
+            >
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Stack>
+        ) : (
+          <Button
+            className="product-add-button"
+            fullWidth
+            variant="outlined"
+            startIcon={<ShoppingCartOutlinedIcon />}
+            onClick={addToCart}
+          >
+            Add to bag
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

@@ -32,7 +32,7 @@ export default function WishlistPage() {
   }
 
   return (
-    <Box sx={{ minHeight: "100svh", bgcolor: "grey.100", py: { xs: 4, sm: 6 } }}>
+    <Box className="wishlist-page" sx={{ minHeight: "100svh", py: { xs: 4, sm: 6 } }}>
       <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, sm: 3 } }}>
         {/* Header */}
         <Typography
